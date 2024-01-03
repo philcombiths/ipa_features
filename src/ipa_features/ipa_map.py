@@ -16,11 +16,14 @@ Notes:
 
     Reconsider relevance of tier attribute.
 """
+import os
+
 import pandas as pd
 
-
-def ipa_ref(csv_src = 'IPA_Symbol_Table.csv'):
-    ipa_df = pd.read_csv(csv_src, index_col='Symbol')
+pkg_dir = os.path.dirname(__file__)
+data_src = os.path.join(pkg_dir, 'IPA_Symbol_Table.csv')
+def ipa_ref(data = data_src):
+    ipa_df = pd.read_csv(data, index_col='Symbol')
     return ipa_df
 
 ipa_ref = ipa_ref()
@@ -155,7 +158,8 @@ class ph_segment:
     # def get_base():
     # def get_diacritics():
 
-result=ph_element('s')
-print(result.ph_element_classify())
 
-pass
+if __name__ == "__main__":
+    result=ph_element('s')
+    print(result.ph_element_classify())
+    pass
