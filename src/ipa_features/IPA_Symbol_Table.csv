@@ -9,6 +9,7 @@ Voiceless palatal stop,Lower-case C,c,c,0x63,Consonant,base,0,palatal,stop,,,,,1
 Voiced palatal stop,Barred dotless J,ɟ,ɟ,0x25f,Consonant,base,1,palatal,stop,,,,,2,,,,,,,,,
 Voiceless velar stop,Lower-case K,k,k,0x6b,Consonant,base,0,velar,stop,,,,,1,,,,,,,,,M
 Voiced velar stop,Opentail lower-case G,ɡ,ɡ,0x261,Consonant,base,1,velar,stop,,,,,2,,,,,,,,,M
+Voiced velar stop,Latin small letter G,g,g,0x67,Consonant,base,1,velar,stop,,,,,2,,,,,,,,,M
 Voiceless uvular stop,Lower-case Q,q,q,0x71,Consonant,base,0,uvular,stop,,,,,1,,,,,,,,,
 Voiced uvular stop,Small capital G,ɢ,ɢ,0x262,Consonant,base,1,uvular,stop,,,,,2,,,,,,,,,
 Glottal stop,Glottal stop,ʔ,ʔ,0x294,Consonant,base,0,glottal,stop,,,,,1,,,,,,,,,
@@ -256,3 +257,5 @@ Egressive,Upwards arrow,↑,↑,0x2191,ExtIPA,diacritic_right,,,,,,,,,,,,,,,,,
 Post-voicing,Subscript wedge,ˬ,◌ˬ,0x2ec,ExtIPA,diacritic_right,,,,,,,,,,,,,,,,,
 Pre-voicing,Subscript wedge,ˬ̵,ˬ̵◌,0x2ec + 0x335,ExtIPA,diacritic_left,,,,,,,,,,,,,,,,,
 Distorted,Combining Vertical Tilde,̾,◌̾,0x33e,ExtIPA,diacritic_right,,,,,,,,,,,,,,,,,
+Null,Empty set,∅,∅,0x2205,Null,base,,,,,,,,,,,,,,,,,
+,Modified letter small K,ᵏ,ᵏ,0x1d4f,Diacritic,diacritic_right,,,,,,,,,,,,,,,,,

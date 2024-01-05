@@ -47,22 +47,35 @@ class ph_element:
                 'actual'.
             position (int): Position index
         """
-        self.string=string
-        self.tier=tier
-        self.parent=parent
-        self.position=position
-        self.series=ipa_ref.loc[[self.string]]
-        self.symbol=self.series.index[0]
-        self.description=self.series['Description'].iloc[0]
-        self.name=self.series['Name'].iloc[0]
-        self.unicode=self.series['Unicode'].iloc[0]
-        self.type=self.series['Type'].iloc[0]
-        self.base_diacritic=self.series['Base-Diacritic'].iloc[0]
-        self.voice=self.series['Voice'].iloc[0]
-        self.place=self.series['Place'].iloc[0]
-        self.manner=self.series['Manner'].iloc[0]
-        self.sonority=self.series['Sonority'].iloc[0]
-
+        try:
+            self.string=string
+            self.tier=tier
+            self.parent=parent
+            self.position=position
+            self.series=ipa_ref.loc[[self.string]]
+            self.symbol=self.series.index[0]
+            self.description=self.series['Description'].iloc[0]
+            self.name=self.series['Name'].iloc[0]
+            self.unicode=self.series['Unicode'].iloc[0]
+            self.type=self.series['Type'].iloc[0]
+            self.base_diacritic=self.series['Base-Diacritic'].iloc[0]
+            self.voice=self.series['Voice'].iloc[0]
+            self.place=self.series['Place'].iloc[0]
+            self.manner=self.series['Manner'].iloc[0]
+            self.sonority=self.series['Sonority'].iloc[0]
+        except KeyError:
+            self.series = None
+            self.symbol = None
+            self.description = None
+            self.name = None
+            self.unicode = None
+            self.type = None
+            self.base_diacritic = None
+            self.voice = None
+            self.place = None
+            self.manner = None
+            self.sonority = None
+            
     def ph_element_classify(self):
         if self.base_diacritic=='base':
             self = ph_base(
