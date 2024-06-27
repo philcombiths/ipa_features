@@ -23,6 +23,18 @@ import pandas as pd
 pkg_dir = os.path.dirname(__file__)
 data_src = os.path.join(pkg_dir, 'IPA_Symbol_Table.csv')
 def ipa_ref(data = data_src):
+    """
+    Reads a CSV file containing IPA symbols and their corresponding information
+    and returns a pandas DataFrame with the data.
+
+    Parameters:
+        data (str): The path to the CSV file. Defaults to the `data_src` variable
+            defined in this module.
+
+    Returns:
+        pandas.DataFrame: A DataFrame with the IPA symbols as the index and their
+            corresponding information as columns.
+    """
     ipa_df = pd.read_csv(data, index_col='Symbol')
     return ipa_df
 
@@ -170,7 +182,9 @@ class ph_segment:
     # def strip():
     # def get_base():
     # def get_diacritics():
-
+    
+    # To Do 2
+    # Take a string with multiple IPA input and break up into ph_segment components
 
 if __name__ == "__main__":
     result=ph_element('s')
