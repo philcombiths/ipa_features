@@ -9,12 +9,22 @@ $author: Philip Combiths
 
 Reference, extract and manipulate IPA segments from a reference spreadsheet.
 
+This script provides a framework for working with IPA segments and their
+associated information. It defines classes for representing different types
+of segments and provides a function for reading the IPA symbol table from a
+CSV file.
+
+
 Notes:
     A work in progress. ph_element is a working class with information 
     extracted from reference sheet for a given IPA character or character
     combination. Can also classify as consonant or vowel.
 
-    Reconsider relevance of tier attribute.
+To Do:
+ - Address problem with empty circle character in diacritic cells (e.g.,  ◌͜ )
+ - Consider using Phon's Phone.java class
+ - Reconsider relevance of tier attribute.
+
 """
 import os
 
@@ -22,7 +32,7 @@ import pandas as pd
 
 pkg_dir = os.path.dirname(__file__)
 data_src = os.path.join(pkg_dir, 'IPA_Symbol_Table.csv')
-def ipa_ref(data = data_src):
+def ipa_reference(data = data_src):
     """
     Reads a CSV file containing IPA symbols and their corresponding information
     and returns a pandas DataFrame with the data.
@@ -38,13 +48,14 @@ def ipa_ref(data = data_src):
     ipa_df = pd.read_csv(data, index_col='Symbol')
     return ipa_df
 
-ipa_ref = ipa_ref()
-consonants=ipa_ref[(ipa_ref['Type']=='Consonant')]
-vowels=ipa_ref[(ipa_ref['Type']=='Vowel')]
-ligatures=ipa_ref[(ipa_ref['Description']=='Affricate or double articulation')]
-non_base_symbols=ipa_ref[(ipa_ref['Base-Diacritic']!='base')]
-all_combining_symbols=ipa_ref[(ipa_ref['Base-Diacritic']!='diacritic_right') | (ipa_ref['Base-Diacritic']!='diacritic_left')]
-consonants=ipa_ref[(ipa_ref['Base-Diacritic']=='base') & (ipa_ref['Type']!='Vowel')]
+# Create subsets of IPA sumbols. Currently not used.
+ipa_df = ipa_reference()
+consonants=ipa_df[(ipa_df['Type']=='Consonant')]
+vowels=ipa_df[(ipa_df['Type']=='Vowel')]
+ligatures=ipa_df[(ipa_df['Description']=='Affricate or double articulation')]
+non_base_symbols=ipa_df[(ipa_df['Base-Diacritic']!='base')]
+all_combining_symbols=ipa_df[(ipa_df['Base-Diacritic']!='diacritic_right') | (ipa_df['Base-Diacritic']!='diacritic_left')]
+consonants2=ipa_df[(ipa_df['Base-Diacritic']=='base') & (ipa_df['Type']!='Vowel')]
 
 class ph_element:
     def __init__(self, string, tier='actual', parent=None, position=None): 
@@ -64,13 +75,13 @@ class ph_element:
             self.tier=tier
             self.parent=parent
             self.position=position
-            self.series=ipa_ref.loc[[self.string]]
+            self.series=ipa_df.loc[[self.string]] # Get the row for the given string
             self.symbol=self.series.index[0]
             self.description=self.series['Description'].iloc[0]
             self.name=self.series['Name'].iloc[0]
             self.unicode=self.series['Unicode'].iloc[0]
             self.type=self.series['Type'].iloc[0]
-            self.base_diacritic=self.series['Base-Diacritic'].iloc[0]
+            self.base_diacritic=self.series['Base-Diacritic'].iloc[0] # key for parsing
             self.voice=self.series['Voice'].iloc[0]
             self.place=self.series['Place'].iloc[0]
             self.manner=self.series['Manner'].iloc[0]
@@ -183,10 +194,11 @@ class ph_segment:
     # def get_base():
     # def get_diacritics():
     
-    # To Do 2
+    # To Do
     # Take a string with multiple IPA input and break up into ph_segment components
 
 if __name__ == "__main__":
     result=ph_element('s')
+    result2 = ph_element('̪')
     print(result.ph_element_classify())
     pass
