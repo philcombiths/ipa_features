@@ -53,9 +53,9 @@ ipa_df = ipa_reference()
 consonants=ipa_df[(ipa_df['Type']=='Consonant')]
 vowels=ipa_df[(ipa_df['Type']=='Vowel')]
 ligatures=ipa_df[(ipa_df['Description']=='Affricate or double articulation')]
-non_base_symbols=ipa_df[(ipa_df['Base-Diacritic']!='base')]
-all_combining_symbols=ipa_df[(ipa_df['Base-Diacritic']!='diacritic_right') | (ipa_df['Base-Diacritic']!='diacritic_left')]
-consonants2=ipa_df[(ipa_df['Base-Diacritic']=='base') & (ipa_df['Type']!='Vowel')]
+non_base_symbols=ipa_df[(ipa_df['Role']!='base')]
+all_combining_symbols=ipa_df[(ipa_df['Role']!='diacritic_right') | (ipa_df['Role']!='diacritic_left')]
+consonants2=ipa_df[(ipa_df['Role']=='base') & (ipa_df['Type']!='Vowel')]
 
 class ph_element:
     def __init__(self, string, tier='actual', parent=None, position=None): 
@@ -78,10 +78,11 @@ class ph_element:
             self.series=ipa_df.loc[[self.string]] # Get the row for the given string
             self.symbol=self.series.index[0]
             self.description=self.series['Description'].iloc[0]
+            self.display = self.series['Symbol-Display'].iloc[0]
             self.name=self.series['Name'].iloc[0]
             self.unicode=self.series['Unicode'].iloc[0]
             self.type=self.series['Type'].iloc[0]
-            self.base_diacritic=self.series['Base-Diacritic'].iloc[0] # key for parsing
+            self.role=self.series['Role'].iloc[0] # key for parsing
             self.voice=self.series['Voice'].iloc[0]
             self.place=self.series['Place'].iloc[0]
             self.manner=self.series['Manner'].iloc[0]
@@ -93,14 +94,14 @@ class ph_element:
             self.name = None
             self.unicode = None
             self.type = None
-            self.base_diacritic = None
+            self.role = None
             self.voice = None
             self.place = None
             self.manner = None
             self.sonority = None
             
     def ph_element_classify(self):
-        if self.base_diacritic=='base':
+        if self.role=='base':
             self = ph_base(
                 self.string, tier=self.tier, parent=self.parent, position=self.position)
         else:
@@ -197,8 +198,71 @@ class ph_segment:
     # To Do
     # Take a string with multiple IPA input and break up into ph_segment components
 
+# Define an IPA parser
+def ipa_parser(input):
+    """
+    Take a string with multiple IPA input and break up into ph_segment components
+    """
+    # keep a memory of encountered segments until the next base segment is reached or end of input.
+    # Then store completed segment to memory and reset segment_memory   
+    memory = []
+    segment_memory = []
+    has_base = False
+    segment_enders = ['base', 'diacritic_left', 'suprasegmental']
+    for i, char in enumerate(input):
+        if char in ipa_df.index:
+            ph = ph_element(char)
+            # If suprasegmental, append directly to memory without assigning to a segment.
+            if ph.role == 'suprasegmental':
+                memory.append(ph)
+                #memory.append(ph.symbol) # debugging
+                continue
+            # If no base glyph yet, add to segment_memory
+            if not has_base:
+                segment_memory.append(ph)
+                #segment_memory.append(ph.symbol) # debugging
+                has_base = True
+                continue
+            # If base glyph already exists, determine if it's the end of a segment
+            elif has_base:
+                if ph.role in segment_enders:
+                    memory.append(segment_memory)
+                    segment_memory = [ph]
+                    #segment_memory = [ph.symbol] # debugging
+                    has_base = False
+
+                else:
+                    segment_memory.append(ph)
+                    #segment_memory.append(ph.symbol) # debugging
+                    continue
+                
+                # prepend any unattached left_diacritic characters already passed in iterator.
+                # then continue with the next character
+                pass
+            
+            if ph.role == 'diacritic_left' or ph.role == 'diacritic_right':
+                # implement actions for diacritics
+                # keep segment in memory
+                pass
+
+            if ph.role == 'diacritic_role-switcher':
+                # implement actions for diacritic_role-switcher
+                pass
+            
+            # TODO: Implement handling of compound phones and ligatures
+        else:
+            raise ValueError (f"Error: {char} not in reference ipa_df")
+    memory.append(segment_memory) # Store final segment
+    
+    return memory
 if __name__ == "__main__":
     result=ph_element('s')
     result2 = ph_element('̪')
-    print(result.ph_element_classify())
-    pass
+    test0 = 'pʰ'
+    test1 = 'pʰæt'   
+    test2 = '၏'
+    test3 = 'k̪ʰaˈʧu.ʧaː'
+    test4 = 'k̪ʰⁿaˈʧ̥uᵊ.ã̬̝ˡː'
+    
+
+    ipa_parser(test4)
