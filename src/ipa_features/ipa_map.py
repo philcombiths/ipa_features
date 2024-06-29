@@ -27,6 +27,7 @@ To Do:
 
 """
 import os
+from typing import List
 
 import pandas as pd
 
@@ -87,9 +88,11 @@ class ph_element:
             self.place=self.series['Place'].iloc[0]
             self.manner=self.series['Manner'].iloc[0]
             self.sonority=self.series['Sonority'].iloc[0]
+            self.eml = self.series['EML'].iloc[0]
         except KeyError:
             self.series = None
             self.symbol = None
+            self.display = None
             self.description = None
             self.name = None
             self.unicode = None
@@ -99,6 +102,7 @@ class ph_element:
             self.place = None
             self.manner = None
             self.sonority = None
+            self.eml = None
             
     def ph_element_classify(self):
         if self.role=='base':
@@ -109,6 +113,28 @@ class ph_element:
                 self.string, tier=self.tier, parent=self.parent, position=self.position)
         return self
     
+class ph_suprasegmental(ph_element):
+    def __init__(self, string, tier='actual', parent=None, position=None): 
+        """
+        Generates a suprasegmental element.
+
+        Parameters:
+            string (str): A string of IPA characters in unicode utf-8, corresponding 
+                to a single phoneme (including compound/combined phones and attached 
+                diacritics)
+            tier (str): Designation as transcription target or transcription actual
+                using Phon tier terminology. Of ['target', 'actual']. Default is 
+                'actual'.
+            position (int): Position index
+        """
+        super().__init__(string, tier=tier, parent=parent, position=position)
+        self.series = None
+        self.symbol = ' '
+        self.display = ' '
+        self.description = 'Word boundary'
+        self.name = 'Whitespace'
+        self.type = 'Suprasegmental'
+        self.role = 'suprasegmental'
 
 class ph_base(ph_element):
     def __init__(self, string, tier='actual', parent=None, position=None): 
@@ -199,52 +225,95 @@ class ph_segment:
     # Take a string with multiple IPA input and break up into ph_segment components
 
 # Define an IPA parser
-def ipa_parser(input):
+def ipa_parser(input: str) -> List[List[ph_element]]:
     """
-    Take a string with multiple IPA input and break up into ph_segment components
+    Parse a string of IPA characters into component segments.
+    
+    More Details:
+    Take a string with multiple IPA input and break up into ph_segment components.
+    Keep a memory of encountered segments until the next base segment is reached or
+    end of input. Then store completed segment to memory and reset segment_memory.
+
+    Args:
+        input_str (str): A string of IPA characters.
+
+    Returns:
+        list: A list of ph_segment objects representing the parsed segments.
+
     """
-    # keep a memory of encountered segments until the next base segment is reached or end of input.
-    # Then store completed segment to memory and reset segment_memory   
-    memory = []
-    segment_memory = []
-    has_base = False
-    segment_enders = ['base', 'diacritic_left', 'suprasegmental']
-    for i, char in enumerate(input):
+    # Initialize variables
+    memory: List[List[ph_element]] = []
+    segment_memory: List[ph_element] = []
+    last_char_memory: str = ""
+    has_base: bool = False
+    word_count: int = 1
+    
+    segment_enders: List[str] = ['base', 'diacritic_left', 'suprasegmental']
+    
+    # Parse input character by character
+    for i, char in enumerate(input.strip()): # i is for unimplemented position counter
+        pass
+        if i == 32:
+            pass
+        if char.isspace():
+            if last_char_memory.isspace():
+                continue
+            else:
+                memory.append(segment_memory) # Also starts new segment
+                segment_memory = []
+                has_base = False
+                word_count += 1
+                memory.append([ph_suprasegmental(' ')]) # space indicates word boundary
+                last_char_memory = char
+                continue
+        
         if char in ipa_df.index:
             ph = ph_element(char)
+                
             # If suprasegmental, append directly to memory without assigning to a segment.
             if ph.role == 'suprasegmental':
-                memory.append(ph)
+                memory.append(segment_memory) # Also starts new segment
+                segment_memory = []
+                memory.append([ph])
                 #memory.append(ph.symbol) # debugging
+                has_base = False
+                last_char_memory = char
                 continue
+            
             # If no base glyph yet, add to segment_memory
             if not has_base:
                 segment_memory.append(ph)
                 #segment_memory.append(ph.symbol) # debugging
-                has_base = True
+                if ph.role == 'base':
+                    has_base = True
+                last_char_memory = char
                 continue
-            # If base glyph already exists, determine if it's the end of a segment
-            elif has_base:
+            
+            # If base glyph already exists
+            else:
+                # Determine if it's the end of a segment, then add to memory and start new segment
                 if ph.role in segment_enders:
                     memory.append(segment_memory)
                     segment_memory = [ph]
                     #segment_memory = [ph.symbol] # debugging
-                    has_base = False
-
+                    has_base = True
+                    last_char_memory = char
+                    continue
+                    
+                # If not end of segment, add to segment_memory
                 else:
                     segment_memory.append(ph)
                     #segment_memory.append(ph.symbol) # debugging
+                    last_char_memory = char
                     continue
-                
-                # prepend any unattached left_diacritic characters already passed in iterator.
-                # then continue with the next character
-                pass
             
             if ph.role == 'diacritic_left' or ph.role == 'diacritic_right':
+                ## Candidate for deletion. No special actions needed for diacritics
                 # implement actions for diacritics
                 # keep segment in memory
                 pass
 
+            # TODO: Implement handling of role-switched diacritics
             if ph.role == 'diacritic_role-switcher':
                 # implement actions for diacritic_role-switcher
                 pass
@@ -253,8 +322,9 @@ def ipa_parser(input):
         else:
             raise ValueError (f"Error: {char} not in reference ipa_df")
     memory.append(segment_memory) # Store final segment
-    
+    debug = [[i.symbol for i in row] for row in memory] # debug
     return memory
+
 if __name__ == "__main__":
     result=ph_element('s')
     result2 = ph_element('̪')
@@ -263,6 +333,6 @@ if __name__ == "__main__":
     test2 = '၏'
     test3 = 'k̪ʰaˈʧu.ʧaː'
     test4 = 'k̪ʰⁿaˈʧ̥uᵊ.ã̬̝ˡː'
+    test5 = 'k̪ʰⁿaˈʧ̥uᵊ.ã̬̝ˡː     pʰæt\nkʰaʧ suto'
     
-
-    ipa_parser(test4)
+    ipa_parser(test5)
