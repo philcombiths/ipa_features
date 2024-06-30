@@ -14,16 +14,15 @@ associated information. It defines classes for representing different types
 of segments and provides a function for reading the IPA symbol table from a
 CSV file.
 
-
 Notes:
     A work in progress. ph_element is a working class with information 
     extracted from reference sheet for a given IPA character or character
     combination. Can also classify as consonant or vowel.
 
 To Do:
- - Address problem with empty circle character in diacritic cells (e.g.,  ◌͜ )
+ - Add support for compound phones
  - Consider using Phon's Phone.java class
- - Reconsider relevance of tier attribute.
+ - Reconsider relevance of tier, parent, position attributes throughout.
 
 """
 import os
@@ -33,20 +32,20 @@ import pandas as pd
 
 pkg_dir = os.path.dirname(__file__)
 data_src = os.path.join(pkg_dir, 'IPA_Symbol_Table.csv')
-def ipa_reference(data = data_src):
+def ipa_reference(data = data_src, index_col='Symbol'):
     """
     Reads a CSV file containing IPA symbols and their corresponding information
     and returns a pandas DataFrame with the data.
 
     Parameters:
         data (str): The path to the CSV file. Defaults to the `data_src` variable
-            defined in this module.
+            defined in this module. Must contain a specified index column.
 
     Returns:
         pandas.DataFrame: A DataFrame with the IPA symbols as the index and their
             corresponding information as columns.
     """
-    ipa_df = pd.read_csv(data, index_col='Symbol')
+    ipa_df = pd.read_csv(data, index_col=index_col)
     return ipa_df
 
 # Create subsets of IPA sumbols. Currently not used.
@@ -71,70 +70,139 @@ class ph_element:
                 'actual'.
             position (int): Position index
         """
-        try:
-            self.string=string
+        # Initialize attributes
+        if string.isspace():
+            self.string = ' '
+            self.symbol = ' '
+            self.display = ' '
+            self.description = 'Word boundary'
+            self.name = 'Whitespace'
+            self.type = 'Suprasegmental'
+            self.role = 'boundary'
+        else:
+            self.string=string.strip()
+            assert len(self.string)==1, f'ph_element string ({self.string}) must be a single character'
             self.tier=tier
             self.parent=parent
             self.position=position
-            self.series=ipa_df.loc[[self.string]] # Get the row for the given string
-            self.symbol=self.series.index[0]
-            self.description=self.series['Description'].iloc[0]
-            self.display = self.series['Symbol-Display'].iloc[0]
-            self.name=self.series['Name'].iloc[0]
-            self.unicode=self.series['Unicode'].iloc[0]
-            self.type=self.series['Type'].iloc[0]
-            self.role=self.series['Role'].iloc[0] # key for parsing
-            self.voice=self.series['Voice'].iloc[0]
-            self.place=self.series['Place'].iloc[0]
-            self.manner=self.series['Manner'].iloc[0]
-            self.sonority=self.series['Sonority'].iloc[0]
-            self.eml = self.series['EML'].iloc[0]
-        except KeyError:
-            self.series = None
-            self.symbol = None
-            self.display = None
-            self.description = None
-            self.name = None
-            self.unicode = None
-            self.type = None
-            self.role = None
-            self.voice = None
-            self.place = None
-            self.manner = None
-            self.sonority = None
-            self.eml = None
-            
-    def ph_element_classify(self):
-        if self.role=='base':
-            self = ph_base(
-                self.string, tier=self.tier, parent=self.parent, position=self.position)
-        else:
-            self = ph_diacritic(
-                self.string, tier=self.tier, parent=self.parent, position=self.position)
-        return self
-    
-class ph_suprasegmental(ph_element):
-    def __init__(self, string, tier='actual', parent=None, position=None): 
-        """
-        Generates a suprasegmental element.
+            self.subclass=None
+            try:
+                self.series=ipa_df.loc[self.string] # Get pd.Series for the given string
+            except KeyError:
+                print(f'Warning: {self.string} not found in IPA_Symbol_Table.csv')
+                self.series=None
+                self.symbol=self.string
+            self.symbol=self.series.name
+            self.description=self.series.get('Description')
+            self.display = self.series.get('Symbol-Display')
+            self.name=self.series.get('Name')
+            self.unicode=self.series.get('Unicode')
+            self.type=self.series.get('Type')
+            self.role=self.series.get('Role')
 
-        Parameters:
-            string (str): A string of IPA characters in unicode utf-8, corresponding 
-                to a single phoneme (including compound/combined phones and attached 
-                diacritics)
-            tier (str): Designation as transcription target or transcription actual
-                using Phon tier terminology. Of ['target', 'actual']. Default is 
-                'actual'.
-            position (int): Position index
-        """
-        super().__init__(string, tier=tier, parent=parent, position=position)
-        self.series = None
-        self.symbol = ' '
-        self.display = ' '
-        self.description = 'Word boundary'
-        self.name = 'Whitespace'
-        self.type = 'Suprasegmental'
-        self.role = 'suprasegmental'
+    # Built-in methods
+    def __eq__(self, other):
+        if isinstance(other, ph_element):
+            return all(
+                (
+                    self.string == other.string,
+                    self.symbol == other.symbol,
+                    self.type == other.type,
+                    self.role == other.role,
+                    # add if equality to be specific to instance
+                    # self.tier == other.tier,
+                    # self.parent == other.parent, 
+                    # self.position == other.position
+                )
+            )
+        return NotImplemented
+
+
+    def __ne__(self, other):
+        if isinstance(other, ph_element):
+            return all(
+                (
+                    self.string != other.string,
+                    self.symbol != other.symbol,
+                    self.type != other.type,
+                    self.role != other.role,
+                    # add if equality to be specific to instance
+                    # self.tier != other.tier,
+                    # self.parent != other.parent, 
+                    # self.position != other.position
+                )
+            )
+        return NotImplemented
+    
+    
+    def __str__(self):
+        return self.display
+    
+    
+    def __repr__(self):
+        return f"{type(self).__name__}(string={self.string}, tier={self.tier}, parent={self.parent}, position={self.position}, subclass={self.subclass})"
+    
+    
+    def __len__(self):
+        return len(self.string)
+    
+    
+    def __getitem__(self, key: int) -> str: # To be tested. Should only permit number indexing
+        # TODO: Implement position and parent information
+        try:
+            return ph_element(self.string[key])
+        except TypeError as exc:
+            if key in self.string:
+                return ph_element(key)
+            else:
+                raise KeyError from exc
+    
+    # Class methods
+    def classify(self):
+        if self.role=='base':
+            # TODO: Add support for compound phones. Currently classified as base.
+            if self.type in ['Consonant', 'Implosive', 'Click']:
+                return ph_consonant(self.string, tier=self.tier, parent=self.parent, position=self.position)
+            if self.type=='Vowel':
+                return ph_vowel(self.string, tier=self.tier, parent=self.parent, position=self.position)
+        elif self.role in ['diacritic_right', 'diacritic_left']:
+            return ph_diacritic(self.string, tier=self.tier, parent=self.parent, position=self.position)
+        elif self.role=='compound_right':
+            return ph_ligature(self.string, tier=self.tier, parent=self.parent, position=self.position)
+        elif self.role=='boundary':
+            return ph_boundary(self.string, tier=self.tier, parent=self.parent, position=self.position)
+        elif self.role=='stress':
+            return ph_stress(self.string, tier=self.tier, parent=self.parent, position=self.position)
+        else:
+            print('WARNING: ph_element unable to be classified')
+            return self
+
+## Marked for deletion
+# class ph_suprasegmental(ph_element):
+#     def __init__(self, string, tier='actual', parent=None, position=None): 
+#         """
+#         Generates a suprasegmental element.
+
+#         Parameters:
+#             string (str): A string of IPA characters in unicode utf-8, corresponding 
+#                 to a single phoneme (including compound/combined phones and attached 
+#                 diacritics)
+#             tier (str): Designation as transcription target or transcription actual
+#                 using Phon tier terminology. Of ['target', 'actual']. Default is 
+#                 'actual'.
+#             position (int): Position index
+#         """
+#         super().__init__(string, tier=tier, parent=parent, position=position)
+#         self.subclass='ph_suprasegmental'
+#         self.series = None
+#         if self.string.isspace():
+#             self.symbol = ' '
+#             self.display = ' '
+#             self.description = 'Word boundary'
+#             self.name = 'Whitespace'
+#             self.type = 'Suprasegmental'
+#             self.role = 'suprasegmental'
+
 
 class ph_base(ph_element):
     def __init__(self, string, tier='actual', parent=None, position=None): 
@@ -151,13 +219,10 @@ class ph_base(ph_element):
             position (int): Position index
         """
         super().__init__(string, tier=tier, parent=parent, position=position)
-        self.string=string
-        self.tier=tier
-        self.parent=parent
-        self.position=position
+        self.subclass='ph_base'
 
 
-class consonant(ph_base):
+class ph_consonant(ph_base):
     def __init__(self, string, tier='actual', parent=None, position=None): 
         """
         Generates a base consonant.
@@ -171,14 +236,34 @@ class consonant(ph_base):
                 'actual'.
             position (int): Position index
         """
-    
-        self.string=string
-        self.tier=tier
-        self.parent=parent
-        self.position=position
+        super().__init__(string, tier=tier, parent=parent, position=position)
+        self.subclass='ph_consonant'
+        self.voice=self.series.get('Voice')
+        self.place=self.series.get('Place')
+        self.manner=self.series.get('Manner')
+        self.sonority=self.series.get('Sonority')
+        self.eml = self.series.get('EML')
+
+class ph_vowel(ph_base):
+    def __init__(self, string, tier='actual', parent=None, position=None):
+        """
+        Generates a vowel.
+
+        Parameters:
+            string (str): A string of IPA characters in unicode utf-8, corresponding 
+                to a single phoneme (including compound/combined phones and attached 
+                diacritics)
+            tier (str): Designation as transcription target or transcription actual
+                using Phon tier terminology. Of ['target', 'actual']. Default is 
+                'actual'.
+            position (int): Position index
+        """
+        super().__init__(string, tier=tier, parent=parent, position=position)
+        self.subclass='ph_vowel'
+        self.vowel_characteristics=None # To be implemented from Series
 
 
-class ph_diacritic(ph_base):
+class ph_diacritic(ph_element):
     def __init__(self, string, tier='actual', parent=None, position=None): 
         """
         Generates a diacritic or combining phonetic segment.
@@ -191,12 +276,65 @@ class ph_diacritic(ph_base):
                 'actual'.
             position (int): Position index
         """
-        self.string=string
-        self.tier=tier
-        self.parent=parent
-        self.position=position
+        super().__init__(string, tier=tier, parent=parent, position=position)
+        self.subclass='ph_diacritic'
+        self.role_switcher=False # To be implemented (followed by role_switcher then True)
+        self.attach_direction=None # To be implemented
+        self.base=None # To be implemented
+        
+class ph_ligature(ph_element):
+    # TODO: Consider as a subclass of ph_diacritic instead
+    def __init__(self, string, tier='actual', parent=None, position=None): 
+        """
+        Generates a ligature or combining phonetic segment.
 
-class ph_segment:
+        Parameters:
+            string (str): A string of IPA characters in unicode utf-8, corresponding 
+                to a combining IPA element
+            tier (str): Designation as transcription target or transcription actual
+                using Phon tier terminology. Of ['target', 'actual']. Default is 
+                'actual'.
+            position (int): Position index
+        """
+        super().__init__(string, tier=tier, parent=parent, position=position)
+        self.subclass='ph_ligature'
+        self.role_switcher=False # To be implemented (followed by role_switcher then True)
+        self.attach_direction='right' # To be implemented
+        self.base=None # To be implemented (how to do compound base?)
+
+
+class ph_boundary(ph_element):
+    def __init__(self, string, tier='actual', parent=None, position=None): 
+        """
+        Generates a word, syllable, foot, or intonation boundary element.
+
+        Parameters:
+            string (str): A string of IPA characters in unicode utf-8, corresponding 
+                to a combining IPA element.
+            tier (str): Designation as transcription target or transcription actual
+                using Phon tier terminology. Of ['target', 'actual']. Default is 'actual'
+        """
+        super().__init__(string, tier=tier, parent=parent, position=position)
+        self.subclass='ph_boundary'
+        
+class ph_stress(ph_element):
+    def __init__(self, string, tier='actual', parent=None, position=None): 
+        """
+        Generates a stress element.
+
+        Parameters:
+            string (str): An IPA character in unicode utf-8, corresponding 
+                to a stress marker.
+            tier (str): Designation as transcription target or transcription actual
+                using Phon tier terminology. Of ['target', 'actual']. Default is 
+                'actual'.
+            position (int): Position index
+        """
+        super().__init__(string, tier=tier, parent=parent, position=position)
+        self.subclass='ph_stress'
+
+
+class ph_segment(ph_element):
     def __init__(self, string, tier='actual', parent=None, position=None): 
         """
         Generates a segment.
@@ -210,21 +348,21 @@ class ph_segment:
                 'actual'.
             position (int): Position index
         """
-        self.string=string
-        self.tier=tier
-        self.parent=parent
-        self.position=position
-        if isinstance(self, ph_segment):
-            self.type = "segment"
+        super().__init__(string, tier=tier, parent=parent, position=position)
+        self.subclass='ph_segment'
+        self.base=None # To be implemented
+        self.diacritics=None # To be implemented
+        self.right_diacritics=None # To be implemented
+        self.left_diacritics=None # To be implemented
+        self.stress=None # To be implemented
+        self.syllable=None # To be implemented
+        self.word=None # To be implemented
+
     # To Do:
     # def strip():
     # def get_base():
     # def get_diacritics():
-    
-    # To Do
-    # Take a string with multiple IPA input and break up into ph_segment components
 
-# Define an IPA parser
 def ipa_parser(input: str) -> List[List[ph_element]]:
     """
     Parse a string of IPA characters into component segments.
@@ -248,7 +386,7 @@ def ipa_parser(input: str) -> List[List[ph_element]]:
     has_base: bool = False
     word_count: int = 1
     
-    segment_enders: List[str] = ['base', 'diacritic_left', 'suprasegmental']
+    segment_enders: List[str] = ['base', 'diacritic_left', 'boundary', 'stress']
     
     # Parse input character by character
     for i, char in enumerate(input.strip()): # i is for unimplemented position counter
@@ -263,15 +401,15 @@ def ipa_parser(input: str) -> List[List[ph_element]]:
                 segment_memory = []
                 has_base = False
                 word_count += 1
-                memory.append([ph_suprasegmental(' ')]) # space indicates word boundary
+                memory.append([ph_boundary(' ')]) # space indicates word boundary
                 last_char_memory = char
                 continue
         
         if char in ipa_df.index:
             ph = ph_element(char)
                 
-            # If suprasegmental, append directly to memory without assigning to a segment.
-            if ph.role == 'suprasegmental':
+            # If boundary or stress marker, append directly to memory without assigning to a segment.
+            if ph.role in ['boundary', 'stress']:
                 memory.append(segment_memory) # Also starts new segment
                 segment_memory = []
                 memory.append([ph])
@@ -328,11 +466,13 @@ def ipa_parser(input: str) -> List[List[ph_element]]:
 if __name__ == "__main__":
     result=ph_element('s')
     result2 = ph_element('̪')
+    result3 = ph_element(' ')
     test0 = 'pʰ'
-    test1 = 'pʰæt'   
-    test2 = '၏'
+    test1 = 'pʰæt'
+    test2 = '၏' # illegal characters
     test3 = 'k̪ʰaˈʧu.ʧaː'
     test4 = 'k̪ʰⁿaˈʧ̥uᵊ.ã̬̝ˡː'
     test5 = 'k̪ʰⁿaˈʧ̥uᵊ.ã̬̝ˡː     pʰæt\nkʰaʧ suto'
     
-    ipa_parser(test5)
+    output = ipa_parser(test5)
+    pass
