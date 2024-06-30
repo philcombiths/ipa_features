@@ -1,4 +1,4 @@
-Description,Name,Symbol,Symbol-Display,Unicode,Type,Base-Diacritic,Voice,Place,Manner,Flap,Lateral,Liquid,Glide,Sonority,Back,Central,Front,Close,Mid,Open,Round,Rhotic,EML
+﻿Description,Name,Symbol,Symbol-Display,Unicode,Type,Role,Voice,Place,Manner,Flap,Lateral,Liquid,Glide,Sonority,Back,Central,Front,Close,Mid,Open,Round,Rhotic,EML
 Voiceless bilabial stop,Lower-case P,p,p,0x70,Consonant,base,0,bilabial,stop,,,,,1,,,,,,,,,E
 Voiced bilabial stop,Lower-case B,b,b,0x62,Consonant,base,1,bilabial,stop,,,,,2,,,,,,,,,E
 Voiceless alveolar stop,Lower-case T,t,t,0x74,Consonant,base,0,alveolar,stop,,,,,1,,,,,,,,,M
@@ -9,7 +9,7 @@ Voiceless palatal stop,Lower-case C,c,c,0x63,Consonant,base,0,palatal,stop,,,,,1
 Voiced palatal stop,Barred dotless J,ɟ,ɟ,0x25f,Consonant,base,1,palatal,stop,,,,,2,,,,,,,,,
 Voiceless velar stop,Lower-case K,k,k,0x6b,Consonant,base,0,velar,stop,,,,,1,,,,,,,,,M
 Voiced velar stop,Opentail lower-case G,ɡ,ɡ,0x261,Consonant,base,1,velar,stop,,,,,2,,,,,,,,,M
-Voiced velar stop,Latin small letter G,g,g,0x67,Consonant,base,1,velar,stop,,,,,2,,,,,,,,,M
+Voiced velar stop,Latin small letter G (non-IPA),g,g,0x67,Consonant,base,1,velar,stop,,,,,2,,,,,,,,,M
 Voiceless uvular stop,Lower-case Q,q,q,0x71,Consonant,base,0,uvular,stop,,,,,1,,,,,,,,,
 Voiced uvular stop,Small capital G,ɢ,ɢ,0x262,Consonant,base,1,uvular,stop,,,,,2,,,,,,,,,
 Glottal stop,Glottal stop,ʔ,ʔ,0x294,Consonant,base,0,glottal,stop,,,,,1,,,,,,,,,
@@ -119,15 +119,15 @@ Open central unrounded vowel,Lower-case A,a,a,0x61,Vowel,base,,,,,,,,,,1,,,,1,0,
 Open front rounded vowel,Small capital O-E ligature,ɶ,ɶ,0x276,Vowel,base,,,,,,,,,,,1,,,1,1,,
 Open back unrounded vowel,Script A,ɑ,ɑ,0x251,Vowel,base,,,,,,,,,1,,,,,1,0,,
 Open back rounded vowel,Turned script A,ɒ,ɒ,0x252,Vowel,base,,,,,,,,,1,,,,,1,1,,
-Primary stress,Vertical stroke (Superior),ˈ,ˈ,0x2c8,Suprasegmental,diacritic,,,,,,,,,,,,,,,,,
-Secondary stress,Vertical stroke (Inferior),ˌ,ˌ,0x2cc,Suprasegmental,diacritic,,,,,,,,,,,,,,,,,
+Primary stress,Vertical stroke (Superior),ˈ,ˈ,0x2c8,Suprasegmental,stress,,,,,,,,,,,,,,,,,
+Secondary stress,Vertical stroke (Inferior),ˌ,ˌ,0x2cc,Suprasegmental,stress,,,,,,,,,,,,,,,,,
 Long,Length mark,ː,ː,0x2d0,Suprasegmental,diacritic_right,,,,,,,,,,,,,,,,,
-Affricate or double articulation,Top tie bar,͡,◌͡,0x361,Suprasegmental,diacritic_right,,,,,,,,,,,,,,,,,
-Affricate or double articulation,Bottom tie bar,͜,◌͜,0x35c,Suprasegmental,diacritic_right,,,,,,,,,,,,,,,,,
-Minor (foot) group,Vertical line,|,|,0x7c,Suprasegmental,diacritic,,,,,,,,,,,,,,,,,
-Major (intonation) group,Double vertical line,‖,‖,0x2016,Suprasegmental,diacritic,,,,,,,,,,,,,,,,,
+Affricate or double articulation,Top tie bar,͡,◌͡,0x361,Suprasegmental,compound_right,,,,,,,,,,,,,,,,,
+Affricate or double articulation,Bottom tie bar,͜,◌͜,0x35c,Suprasegmental,compound_right,,,,,,,,,,,,,,,,,
+Minor (foot) group,Vertical line,|,|,0x7c,Suprasegmental,boundary,,,,,,,,,,,,,,,,,
+Major (intonation) group,Double vertical line,‖,‖,0x2016,Suprasegmental,boundary,,,,,,,,,,,,,,,,,
 Half-long,Half-length mark,ˑ,ˑ,0x2d1,Suprasegmental,diacritic_right,,,,,,,,,,,,,,,,,
-Syllable break,Period,.,.,0x2e,Suprasegmental,diacritic_right,,,,,,,,,,,,,,,,,
+Syllable break,Period,.,.,0x2e,Suprasegmental,boundary,,,,,,,,,,,,,,,,,
 Aspirated,Superscript H,ʰ,◌ʰ,0x2b0,Contour,diacritic_right,,,,,,,,,,,,,,,,,
 Pre-aspirated,Superscript H,ʰ̵,ʰ̵◌,0x2b0 + 0x335,Contour,diacritic_left,,,,,,,,,,,,,,,,,
 Unreleased,Superscript equals,⁼,◌⁼,0x207c,Contour,diacritic_right,,,,,,,,,,,,,,,,,
@@ -153,7 +153,7 @@ Modifier letter small Esh,Superscript small Esh,ᶴ,◌ᶴ,0x1db4,Contour,diacri
 Modifier letter small Ezh,Superscript small Ezh,ᶾ,◌ᶾ,0x1dbe,Contour,diacritic_right,,,,,,,,,,,,,,,,,
 Modifier letter small Schwa,Superscript small Schwa,ᵊ,◌ᵊ,0x1d4a,Contour,diacritic_right,,,,,,,,,,,,,,,,,
 Modifier letter small R,Superscript small R,ʳ,◌ʳ,0x2b3,Contour,diacritic_right,,,,,,,,,,,,,,,,,
-Role-switcher,Short stroke overlay; Role-switcher,̵,◌̵,0x335,Contour,diacritic_right,,,,,,,,,,,,,,,,,
+Role-switcher,Short stroke overlay; Role-switcher,̵,◌̵,0x335,Contour,diacritic_role-switcher,,,,,,,,,,,,,,,,,
 Syllabic,Syllabicity mark,̩,◌̩,0x329,Diacritic,diacritic_right,,,,,,,,,,,,,,,,,
 No audible release; Unreleased,Corner,̚,◌̚,0x31a,Diacritic,diacritic_right,,,,,,,,,,,,,,,,,
 Nasalized,Superscript tilde,̃,◌̃,0x303,Diacritic,diacritic_right,,,,,,,,,,,,,,,,,
@@ -258,4 +258,3 @@ Post-voicing,Subscript wedge,ˬ,◌ˬ,0x2ec,ExtIPA,diacritic_right,,,,,,,,,,,,,,
 Pre-voicing,Subscript wedge,ˬ̵,ˬ̵◌,0x2ec + 0x335,ExtIPA,diacritic_left,,,,,,,,,,,,,,,,,
 Distorted,Combining Vertical Tilde,̾,◌̾,0x33e,ExtIPA,diacritic_right,,,,,,,,,,,,,,,,,
 Null,Empty set,∅,∅,0x2205,Null,base,,,,,,,,,,,,,,,,,
-,Modified letter small K,ᵏ,ᵏ,0x1d4f,Diacritic,diacritic_right,,,,,,,,,,,,,,,,,

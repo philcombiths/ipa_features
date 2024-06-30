@@ -1,6 +1,5 @@
 """
-This is a skeleton file that can serve as a starting point for a Python
-console script. To run this script uncomment the following lines in the
+To run this script uncomment the following lines in the
 ``[options.entry_points]`` section in ``setup.cfg``::
 
     console_scripts =
@@ -24,7 +23,9 @@ import argparse
 import logging
 import sys
 
+from ipa_features.ipa_map import ipa_parser
 from ipa_features import __version__
+from ipa_features.logging_config import setup_logging
 
 __author__ = "Philip Combiths"
 __copyright__ = "Philip Combiths"
@@ -36,20 +37,19 @@ _logger = logging.getLogger(__name__)
 # ---- Python API ----
 # The functions defined in this section can be imported by users in their
 # Python scripts/interactive interpreter, e.g. via
-# `from ipa_features.skeleton import fib`,
+# `from ipa_features.ipa_map import ipa_parser`,
 # when using this Python module as a library.
 
 
 def ipa_features():
     return
 
-
 # ---- CLI ----
 # The functions defined in this section are wrappers around the main Python
 # API allowing them to be called directly from the terminal as a CLI
 # executable/script.
 
-# Update this for function
+# Draft updated for function
 def parse_args(args):
     """Parse command line parameters
 
@@ -60,13 +60,13 @@ def parse_args(args):
     Returns:
       :obj:`argparse.Namespace`: command line parameters namespace
     """
-    parser = argparse.ArgumentParser(description="Just a Fibonacci demonstration")
+    parser = argparse.ArgumentParser(description="IPA Parser demonstration")
     parser.add_argument(
         "--version",
         action="version",
         version=f"ipa_features {__version__}",
     )
-    parser.add_argument(dest="n", help="n-th Fibonacci number", type=int, metavar="INT")
+    parser.add_argument(dest="input", help="An IPA transcription string", type=str, metavar="INPUT")
     parser.add_argument(
         "-v",
         "--verbose",
@@ -86,33 +86,33 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
-def setup_logging(loglevel):
-    """Setup basic logging
+# def setup_logging(loglevel):
+#     """Setup basic logging for script execution
 
-    Args:
-      loglevel (int): minimum loglevel for emitting messages
-    """
-    logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
-    logging.basicConfig(
-        level=loglevel, stream=sys.stdout, format=logformat, datefmt="%Y-%m-%d %H:%M:%S"
-    )
+#     Args:
+#       loglevel (int): minimum loglevel for emitting messages
+#     """
+#     logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
+#     logging.basicConfig(
+#         level=loglevel, stream=sys.stdout, format=logformat, datefmt="%Y-%m-%d %H:%M:%S"
+#     )
 
 # Update this
 def main(args):
-    """Wrapper allowing :func:`fib` to be called with string arguments in a CLI fashion
+    """Wrapper allowing :func:`ipa_parser` to be called with string arguments in a CLI fashion
 
-    Instead of returning the value from :func:`fib`, it prints the result to the
+    Instead of returning the value from :func:`ipa_parser`, it prints the result to the
     ``stdout`` in a nicely formatted message.
-
+\
     Args:
       args (List[str]): command line parameters as list of strings
-          (for example  ``["--verbose", "42"]``).
+          (for example  ``["--verbose", "tʰɹæ̃ːnˈskɹɪp.ʃə̃ːn"``).
     """
     args = parse_args(args)
     setup_logging(args.loglevel)
-    _logger.debug("Starting crazy calculations...")
-    print(f"The {args.n}-th Fibonacci number is {fib(args.n)}")
-    _logger.info("Script ends here")
+    _logger.debug("Starting parsing")
+    print(f"Input: {args.input}\nResult: {ipa_parser(args.input)}")
+    _logger.info("Script ends here.")
 
 
 def run():
@@ -125,13 +125,13 @@ def run():
 
 if __name__ == "__main__":
     # ^  This is a guard statement that will prevent the following code from
-    #    being executed in the case someone imports this file instead of
+    #    being executed in case someone imports this file instead of
     #    executing it as a script.
     #    https://docs.python.org/3/library/__main__.html
 
-    # After installing your project with pip, users can also run your Python
+    # After installing this project with pip, users can also run the Python
     # modules as scripts via the ``-m`` flag, as defined in PEP 338::
     #
-    #     python -m ipa_features.skeleton 42
+    #     python -m ipa_features tʰɹæ̃ːnˈskɹɪp.ʃə̃ːn
     #
     run()
