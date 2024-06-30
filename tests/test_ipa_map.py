@@ -1,9 +1,14 @@
 import pytest
 from ipa_features.ipa_map import ipa_parser, PhoElement, PhoBase, PhoConsonant, PhoVowel, PhoDiacritic, PhoLigature, PhoBoundary, PhoStress
 
-def test_ph_element_classify():
+def test_classify():
+    """Test PhoElement.classify()."""
+    # Test base
+    assert isinstance(PhoElement('p').classify(), PhoBase)
+    assert isinstance(PhoElement('ǃ').classify(), PhoBase)
     # Test base consonant
     assert isinstance(PhoElement('p').classify(), PhoConsonant)
+    assert isinstance(PhoElement('ǁ').classify(), PhoConsonant)
     # Test base vowel
     assert isinstance(PhoElement('o').classify(), PhoVowel)
     # Test diacritic
@@ -16,6 +21,7 @@ def test_ph_element_classify():
     assert isinstance(PhoElement("ˈ").classify(), PhoStress)
     
 def test_ipa_parser_simple():
+    """Test most Phon-compatible IPA sequences."""
     # Test basic segment
     assert ipa_parser("pʰ") == [
         [PhoElement('p'), PhoElement('ʰ')]
@@ -70,15 +76,15 @@ def test_ipa_parser_simple():
         ipa_parser("Ђ")
 
 def test_ipa_parser_invalid_sequences():
-    # Test invalid Phon IPA sequences. Not implemented.
+    """Test invalid Phon IPA sequences. Not implemented."""
     with pytest.raises(ValueError):
         ipa_parser("ʰp")
         ipa_parser("pⁿ")
         ipa_parser(" pˈ")
         ipa_parser("ʰ̵ⁿˢ͡")
 
-def test_ipa_parser_role_switchers():
-    # Test role-switched diacritics. Not implemented.
+def test_ipa_parser_diacritic_role_switchers():
+    """Test compound phones and ligatures. Not implemented."""
     assert ipa_parser("ʰ̵toᵐ̵ pⁿ̵oˢ") == [
         [PhoElement('ʰ'), PhoElement('̵'), PhoElement('t')],
         [PhoElement('o'), PhoElement('ᵐ'), PhoElement('̵')],
@@ -86,9 +92,12 @@ def test_ipa_parser_role_switchers():
         [PhoElement('p'), PhoElement('ⁿ'), PhoElement('̵')],
         [PhoElement('o'), PhoElement('ˢ')]
     ]
+    assert ipa_parser('ʰ̵t')[0][0].role_switcher # == True
+    assert ipa_parser('ʰ̵t')[0][0].attach_direction == 'left'
+    assert ipa_parser('ʰ̵t')[0][0].base == PhoElement("t")
 
 def test_ipa_parser_compound_phones():
-    # Test compound phones and ligatures. Not implemented.
+    """Test compound phones and ligatures. Not implemented."""
     assert ipa_parser("t͡ʃo͡ʊ t͡sʧ") == [
         [PhoElement('t'), PhoElement('͡'), PhoElement('ʃ')],
         [PhoElement('o'), PhoElement('͡'), PhoElement('ʊ')], 

@@ -1,34 +1,28 @@
 # -*- coding:utf-8 -*-
 """
-python version: 3.6+
-ipa_map version: 0.2
+ipa_features version: 0.2
 
 Created on Oct 10, 2022
 Updated on Jun 30, 2024
 $author: Philip Combiths
 
-Reference, extract and manipulate IPA segments from a reference spreadsheet.
+Reference, extract and manipulate IPA segments from a Phon-based reference.
 
 This script provides a framework for working with IPA segments and their
 associated information. It defines classes for representing different types
-of segments and provides a function for reading the IPA symbol table from a
-CSV file.
-
-Notes:
-    A work in progress. ph_element is a working class with information 
-    extracted from reference sheet for a given IPA character or character
-    combination. Can also classify as consonant or vowel.
+of IPA characters and provide functions for reading the IPA symbol table 
+from a CSV file and parsing IPA transcriptions.
 
 To Do:
+ - Add support for diacritic role switcher
  - Add support for compound phones
- - Consider using Phon's Phone.java class
  - Reconsider relevance of tier, parent, position attributes throughout.
 
 """
 import logging
 import os
 import re
-from typing import List
+from typing import List, Union
 
 import pandas as pd
 
@@ -91,10 +85,6 @@ class PhoElement:
                     Default is 'actual'. Not implemented.
             - parent: The parent element. Not implemented.
             - position: The position of the element. Not implemented.
-            - role_switcher: A boolean that indicates if the role should be switched to the opposite
-                             direction. Not implemented.
-            - attach_direction: A string, 'right', or 'left', indicating if the element should be
-                                attached to the right or left of the base. Not implemented.
     """
 
     def __init__(self, string, tier="actual", parent=None, position=None):
@@ -195,6 +185,19 @@ class PhoElement:
 
     # Class methods
     def classify(self):
+        """
+        Classifies the PhoElement according to its role and type.
+
+        Returns:
+            An instance of one of the following classes:
+            - PhoElement
+                - PhoConsonant
+                - PhoVowel
+                - PhoDiacritic
+                - PhoLigature
+                - PhoBoundary
+                - PhoStress
+        """
         if self.role == "base":
             # TODO: Add support for compound phones. Currently classified as base.
             if self.type in ["Consonant", "Implosive", "Click"]:
@@ -228,188 +231,73 @@ class PhoElement:
                 self.string, tier=self.tier, parent=self.parent, position=self.position
             )
         else:
-            print("WARNING: ph_element unable to be classified")
-            return self
-
-
-## Marked for deletion
-# class ph_suprasegmental(ph_element):
-#     def __init__(self, string, tier='actual', parent=None, position=None):
-#         """
-#         Generates a suprasegmental element.
-
-#         Parameters:
-#             string (str): A string of IPA characters in unicode utf-8, corresponding
-#                 to a single phoneme (including compound/combined phones and attached
-#                 diacritics)
-#             tier (str): Designation as transcription target or transcription actual
-#                 using Phon tier terminology. Of ['target', 'actual']. Default is
-#                 'actual'.
-#             position (int): Position index
-#         """
-#         super().__init__(string, tier=tier, parent=parent, position=position)
-#         self.subclass='ph_suprasegmental'
-#         self.series = None
-#         if self.string.isspace():
-#             self.symbol = ' '
-#             self.display = ' '
-#             self.description = 'Word boundary'
-#             self.name = 'Whitespace'
-#             self.type = 'Suprasegmental'
-#             self.role = 'suprasegmental'
+            _logger.warning("ph_element unable to be classified")
+            return PhoElement(
+                self.string, tier=self.tier, parent=self.parent, position=self.position
+            )
 
 
 class PhoBase(PhoElement):
+    """Represents a base glyph for a segment."""
     def __init__(self, string, tier="actual", parent=None, position=None):
-        """
-        Generates a base phonetic segment.
-
-        Parameters:
-            string (str): A string of IPA characters in unicode utf-8, corresponding
-                to a single phoneme (including compound/combined phones and attached
-                diacritics)
-            tier (str): Designation as transcription target or transcription actual
-                using Phon tier terminology. Of ['target', 'actual']. Default is
-                'actual'.
-            position (int): Position index
-        """
         super().__init__(string, tier=tier, parent=parent, position=position)
-        self.subclass = "ph_base"
+        self.subclass = "base"
 
 
 class PhoConsonant(PhoBase):
+    """Generates a consonant. Subclass of PhoBase."""
     def __init__(self, string, tier="actual", parent=None, position=None):
-        """
-        Generates a base consonant.
-
-        Parameters:
-            string (str): A string of IPA characters in unicode utf-8, corresponding
-                to a single phoneme (including compound/combined phones and attached
-                diacritics)
-            tier (str): Designation as transcription target or transcription actual
-                using Phon tier terminology. Of ['target', 'actual']. Default is
-                'actual'.
-            position (int): Position index
-        """
         super().__init__(string, tier=tier, parent=parent, position=position)
-        self.subclass = "ph_consonant"
+        self.subclass = "consonant"
         self.voice = self.series.get("Voice")
         self.place = self.series.get("Place")
         self.manner = self.series.get("Manner")
         self.sonority = self.series.get("Sonority")
         self.eml = self.series.get("EML")
 
-
 class PhoVowel(PhoBase):
+    """Generates a vowel. Sublcass of PhoBase"""
     def __init__(self, string, tier="actual", parent=None, position=None):
-        """
-        Generates a vowel.
-
-        Parameters:
-            string (str): A string of IPA characters in unicode utf-8, corresponding
-                to a single phoneme (including compound/combined phones and attached
-                diacritics)
-            tier (str): Designation as transcription target or transcription actual
-                using Phon tier terminology. Of ['target', 'actual']. Default is
-                'actual'.
-            position (int): Position index
-        """
         super().__init__(string, tier=tier, parent=parent, position=position)
-        self.subclass = "ph_vowel"
+        self.subclass = "vowel"
         self.vowel_characteristics = None  # To be implemented from Series
 
-
 class PhoDiacritic(PhoElement):
+    """Generates a diacritic or combining phonetic segment."""
     def __init__(self, string, tier="actual", parent=None, position=None):
-        """
-        Generates a diacritic or combining phonetic segment.
-
-        Parameters:
-            string (str): A string of IPA characters in unicode utf-8, corresponding
-                to a combining IPA element
-            tier (str): Designation as transcription target or transcription actual
-                using Phon tier terminology. Of ['target', 'actual']. Default is
-                'actual'.
-            position (int): Position index
-        """
         super().__init__(string, tier=tier, parent=parent, position=position)
-        self.subclass = "ph_diacritic"
-        self.role_switcher = (
-            False  # To be implemented (followed by role_switcher then True)
-        )
+        self.subclass = "diacritic"
+        self.role_switcher = False  # If followed by role switcher. To be implemented.
         self.attach_direction = None  # To be implemented
         self.base = None  # To be implemented
 
-
 class PhoLigature(PhoElement):
+    """Generates a ligature segment that combines two base glyphs."""
     # TODO: Consider as a subclass of ph_diacritic instead
     def __init__(self, string, tier="actual", parent=None, position=None):
-        """
-        Generates a ligature or combining phonetic segment.
-
-        Parameters:
-            string (str): A string of IPA characters in unicode utf-8, corresponding
-                to a combining IPA element
-            tier (str): Designation as transcription target or transcription actual
-                using Phon tier terminology. Of ['target', 'actual']. Default is
-                'actual'.
-            position (int): Position index
-        """
         super().__init__(string, tier=tier, parent=parent, position=position)
-        self.subclass = "ph_ligature"
+        self.subclass = "ligature"
         self.role_switcher = (
             False  # To be implemented (followed by role_switcher then True)
         )
         self.attach_direction = "right"  # To be implemented
         self.base = None  # To be implemented (how to do compound base?)
 
-
 class PhoBoundary(PhoElement):
+    """Generates a word, syllable, foot, or intonation boundary element."""
     def __init__(self, string, tier="actual", parent=None, position=None):
-        """
-        Generates a word, syllable, foot, or intonation boundary element.
-
-        Parameters:
-            string (str): A string of IPA characters in unicode utf-8, corresponding
-                to a combining IPA element.
-            tier (str): Designation as transcription target or transcription actual
-                using Phon tier terminology. Of ['target', 'actual']. Default is 'actual'
-        """
         super().__init__(string, tier=tier, parent=parent, position=position)
-        self.subclass = "ph_boundary"
-
+        self.subclass = "boundary"
 
 class PhoStress(PhoElement):
+    """Generates a stress marker."""
     def __init__(self, string, tier="actual", parent=None, position=None):
-        """
-        Generates a stress element.
-
-        Parameters:
-            string (str): An IPA character in unicode utf-8, corresponding
-                to a stress marker.
-            tier (str): Designation as transcription target or transcription actual
-                using Phon tier terminology. Of ['target', 'actual']. Default is
-                'actual'.
-            position (int): Position index
-        """
         super().__init__(string, tier=tier, parent=parent, position=position)
-        self.subclass = "ph_stress"
-
+        self.subclass = "stress"
 
 class PhoSegment(PhoElement):
+    """Generates a segment, including base and combining elements."""
     def __init__(self, string, tier="actual", parent=None, position=None):
-        """
-        Generates a segment.
-
-        Parameters:
-            string (str): A string of IPA characters in unicode utf-8, corresponding
-                to a single phoneme (including compound/combined phones and attached
-                diacritics)
-            tier (str): Designation as transcription target or transcription actual
-                using Phon tier terminology. Of ['target', 'actual']. Default is
-                'actual'.
-            position (int): Position index
-        """
         super().__init__(string, tier=tier, parent=parent, position=position)
         self.subclass = "ph_segment"
         self.base = None  # To be implemented
@@ -419,12 +307,7 @@ class PhoSegment(PhoElement):
         self.stress = None  # To be implemented
         self.syllable = None  # To be implemented
         self.word = None  # To be implemented
-
-    # To Do:
-    # def strip():
-    # def get_base():
-    # def get_diacritics():
-
+    # TODO: def get_base() and get_diacritics()
 
 def ipa_parser(input_str: str) -> List[List[PhoElement]]:
     """
@@ -453,7 +336,7 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
 
     # Remove brackets and slashes from transcription input
     input_str = re.sub(r"[\[\]\\\/]", " ", input_str)
-    
+
     # Parse input character by character
     for i, char in enumerate(
         input_str.strip() # Remove leading and trailing whitespace
@@ -473,7 +356,7 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
         if char in ipa_df.index:
             ph = PhoElement(char)
             _logger.info("\tph_element object created for %s", char)
-            # If boundary or stress marker, append directly to memory without assigning to a segment.
+            # If boundary or stress marker, append directly to memory
             if ph.role in ["boundary", "stress"]:
                 if not has_base:
                     transcript_memory.append([ph])  # Store as own segment directly.
@@ -522,7 +405,8 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
 
             # TODO: Implement handling of compound phones and ligatures
             # Code goes here
-            
+
+        # If character not in ipa_df
         _logger.error("Error: %s not in reference ipa_df", char)
         raise ValueError(f"Error: {char} not in reference ipa_df")
 
@@ -534,16 +418,16 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
 
 
 if __name__ == "__main__":
-    result1 = PhoElement("s")
-    result2 = PhoElement("̪")
-    result3 = PhoElement(" ")
-    test0 = "pʰ"
-    test1 = "pʰæt"
-    test2 = "၏"  # illegal characters
-    test5 = "k̪ʰⁿaˈʧ̥uᵊ.ã̬̝ˡː     pʰæt\nkʰaʧ suto"
-    test6 = "kʰⁿaˈʧ̥u"
-    test7 = "ⁿaˈʧ̥ukʰⁿaˈʧ̥"
-    test8 = "ˌ‖|ᶬhi.toˡˈ|ᵐtə̃"
+    RESULT1 = PhoElement("s")
+    RESULT2 = PhoElement("̪")
+    RESULT3 = PhoElement(" ")
+    TEST1 = "pʰ"
+    TEST2 = "pʰæt"
+    TEST3 = "၏"  # illegal characters
+    TEST4 = "k̪ʰⁿaˈʧ̥uᵊ.ã̬̝ˡː     pʰæt\nkʰaʧ suto"
+    TEST5 = "kʰⁿaˈʧ̥u"
+    TEST6 = "ⁿaˈʧ̥ukʰⁿaˈʧ̥"
+    TEST7 = "ˌ‖|ᶬhi.toˡˈ|ᵐtə̃"
 
-    output = ipa_parser(test8)
-    pass
+    output = ipa_parser(TEST7)
+    print(output)
