@@ -22,7 +22,7 @@ def test_ipa_parser_simple():
     ]
     
     # Test multiple segments and whitespace handling
-    assert ipa_parser(" pʰæt kːaʧ\n suto   ") == [
+    assert ipa_parser(" \tpʰæt kːaʧ\n suto \r\n  ") == [
         [ph_element('p'), ph_element('ʰ')],
         [ph_element('æ')],
         [ph_element('t')],
@@ -37,7 +37,7 @@ def test_ipa_parser_simple():
         [ph_element('o')]
     ]
     
-    # Test
+    # Test left and right diacritics and primary stress
     assert ipa_parser("ⁿaˈʧ̥ukʰⁿaˈʧ̥") == [
         [ph_element('ⁿ'), ph_element('a')],
         [ph_element('ˈ')],
@@ -48,10 +48,33 @@ def test_ipa_parser_simple():
         [ph_element('ˈ')],
         [ph_element('ʧ'), ph_element('̥')]
     ]
-        
+    
+    # Test syllable and foot boundary characters
+    assert ipa_parser("ˌ‖|ᶬhi.toˡˈ|ᵐtə̃") == [
+        [ph_element('ˌ')],
+        [ph_element('‖')],
+        [ph_element('|')],
+        [ph_element('ᶬ'), ph_element('h')],
+        [ph_element('i')],
+        [ph_element('.')],
+        [ph_element('t')],
+        [ph_element('o'), ph_element('ˡ')],
+        [ph_element('ˈ')],
+        [ph_element('|')],
+        [ph_element('ᵐ'), ph_element('t')],
+        [ph_element('ə'), ph_element('̃')]
+    ]
+    
     # Test invalid characters
     with pytest.raises(ValueError):
         ipa_parser("Ђ")
+
+def test_ipa_parser_invalid_sequences():
+    # Test invalid Phon IPA sequences
+    with pytest.raises(ValueError):
+        ipa_parser("ʰp")
+        ipa_parser("pⁿ")
+        ipa_parser(" pˈ")
 
 def test_ipa_parser_role_switchers():
     # Test role-switched diacritics

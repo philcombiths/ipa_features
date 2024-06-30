@@ -395,8 +395,6 @@ def ipa_parser(input: str) -> List[List[ph_element]]:
     
     # Parse input character by character
     for i, char in enumerate(input.strip()): # i is for unimplemented position counter
-        if i==8:
-            pass
         _logger.info("Parsing character %s: %s", i, char)
         if char.isspace():
             if last_char_memory.isspace():
@@ -415,13 +413,18 @@ def ipa_parser(input: str) -> List[List[ph_element]]:
             _logger.info("\tph_element object created for %s", char)
             # If boundary or stress marker, append directly to memory without assigning to a segment.
             if ph.role in ['boundary', 'stress']:
-                memory.append(segment_memory) # Also starts new segment
-                segment_memory = []
-                memory.append([ph])
-                #memory.append(ph.symbol) # debugging
-                has_base = False
+                if not has_base:
+                    memory.append([ph]) # Store as own segment directly.
+                    _logger.info("\tBoundary/stress stored to memory")
+                else:
+                    memory.append(segment_memory) # End last segment and store
+                    _logger.info("\tBoundary/stress indicates end of last segment")
+                    has_base = False
+                    segment_memory = []
+                    _logger.info("****Segment memory cleared.****")
+                    memory.append([ph]) # Store as own segment directly
+                    _logger.info("\tBoundary/stress stored to memory")
                 last_char_memory = char
-                _logger.info("\tBoundary or stress marker")
                 continue
             
             # If no base glyph yet, add to segment_memory
@@ -489,6 +492,7 @@ if __name__ == "__main__":
     test5 = 'k̪ʰⁿaˈʧ̥uᵊ.ã̬̝ˡː     pʰæt\nkʰaʧ suto'
     test6 = 'kʰⁿaˈʧ̥u'
     test7 = "ⁿaˈʧ̥ukʰⁿaˈʧ̥"
+    test8 = "ˌ‖|ᶬhi.toˡˈ|ᵐtə̃"
     
-    output = ipa_parser(test7)
+    output = ipa_parser(test8)
     pass
