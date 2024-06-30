@@ -21,8 +21,8 @@ def test_ipa_parser_simple():
         [PhoElement('p'), PhoElement('ʰ')]
     ]
     
-    # Test multiple segments and whitespace handling
-    assert ipa_parser(" \tpʰæt kːaʧ\n suto \r\n  ") == [
+    # Test multiple segments andwhitespace handling
+    assert ipa_parser("[     \tpʰæt kːaʧ\n suto \r\n  ]") == [
         [PhoElement('p'), PhoElement('ʰ')],
         [PhoElement('æ')],
         [PhoElement('t')],
@@ -38,7 +38,7 @@ def test_ipa_parser_simple():
     ]
     
     # Test left and right diacritics and primary stress
-    assert ipa_parser("ⁿaˈʧ̥ukʰⁿaˈʧ̥") == [
+    assert ipa_parser("/ⁿaˈʧ̥ukʰⁿaˈʧ̥/") == [
         [PhoElement('ⁿ'), PhoElement('a')],
         [PhoElement('ˈ')],
         [PhoElement('ʧ'), PhoElement('̥')],
@@ -70,14 +70,15 @@ def test_ipa_parser_simple():
         ipa_parser("Ђ")
 
 def test_ipa_parser_invalid_sequences():
-    # Test invalid Phon IPA sequences
+    # Test invalid Phon IPA sequences. Not implemented.
     with pytest.raises(ValueError):
         ipa_parser("ʰp")
         ipa_parser("pⁿ")
         ipa_parser(" pˈ")
+        ipa_parser("ʰ̵ⁿˢ͡")
 
 def test_ipa_parser_role_switchers():
-    # Test role-switched diacritics
+    # Test role-switched diacritics. Not implemented.
     assert ipa_parser("ʰ̵toᵐ̵ pⁿ̵oˢ") == [
         [PhoElement('ʰ'), PhoElement('̵'), PhoElement('t')],
         [PhoElement('o'), PhoElement('ᵐ'), PhoElement('̵')],
@@ -87,7 +88,7 @@ def test_ipa_parser_role_switchers():
     ]
 
 def test_ipa_parser_compound_phones():
-    # Test compound phones and ligatures
+    # Test compound phones and ligatures. Not implemented.
     assert ipa_parser("t͡ʃo͡ʊ t͡sʧ") == [
         [PhoElement('t'), PhoElement('͡'), PhoElement('ʃ')],
         [PhoElement('o'), PhoElement('͡'), PhoElement('ʊ')], 

@@ -27,6 +27,7 @@ To Do:
 """
 import logging
 import os
+import re
 from typing import List
 
 import pandas as pd
@@ -450,9 +451,12 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
     segment_enders: List[str] = ["base", "diacritic_left", "boundary", "stress"]
     _logger.info("Initializing variables")
 
+    # Remove brackets and slashes from transcription input
+    input_str = re.sub(r"[\[\]\\\/]", " ", input_str)
+    
     # Parse input character by character
     for i, char in enumerate(
-        input_str.strip()
+        input_str.strip() # Remove leading and trailing whitespace
     ):  # i is unimplemented position counter / used for debugging
         _logger.info("Parsing character %s: %s", i, char)
         if char.isspace():
