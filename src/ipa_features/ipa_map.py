@@ -325,6 +325,14 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
         list: A list of ph_segment objects representing the parsed segments.
 
     """
+    
+    # Remove brackets and slashes from transcription input
+    input_str = re.sub(r"[\[\]\\\/]", " ", input_str)
+    
+    # If input contains role switcher, return empty list
+    if "̵" in input_str:
+        return ['']
+    
     # Initialize variables
     transcript_memory: List[List[PhoElement]] = []
     seg_memory: List[PhoElement] = []
@@ -334,8 +342,6 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
     segment_enders: List[str] = ["base", "diacritic_left", "boundary", "stress"]
     _logger.info("Initializing variables")
 
-    # Remove brackets and slashes from transcription input
-    input_str = re.sub(r"[\[\]\\\/]", " ", input_str)
 
     # Parse input character by character
     for i, char in enumerate(
@@ -354,7 +360,7 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
             continue
 
         if char in ipa_df.index:
-            ph = PhoElement(char)
+            ph = PhoElement(char).classify()
             _logger.info("\tph_element object created for %s", char)
             # If boundary or stress marker, append directly to memory
             if ph.role in ["boundary", "stress"]:
