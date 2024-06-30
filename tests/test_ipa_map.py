@@ -1,68 +1,68 @@
 import pytest
-from ipa_features.ipa_map import ipa_parser, ph_element, ph_base, ph_consonant, ph_vowel, ph_diacritic, ph_ligature, ph_boundary, ph_stress
+from ipa_features.ipa_map import ipa_parser, PhoElement, PhoBase, PhoConsonant, PhoVowel, PhoDiacritic, PhoLigature, PhoBoundary, PhoStress
 
 def test_ph_element_classify():
     # Test base consonant
-    assert isinstance(ph_element('p').classify(), ph_consonant)
+    assert isinstance(PhoElement('p').classify(), PhoConsonant)
     # Test base vowel
-    assert isinstance(ph_element('o').classify(), ph_vowel)
+    assert isinstance(PhoElement('o').classify(), PhoVowel)
     # Test diacritic
-    assert isinstance(ph_element('ʰ').classify(), ph_diacritic)
+    assert isinstance(PhoElement('ʰ').classify(), PhoDiacritic)
     # Test ligature
-    assert isinstance(ph_element('͡').classify(), ph_ligature)
+    assert isinstance(PhoElement('͡').classify(), PhoLigature)
     # Test boundary
-    assert isinstance(ph_element('.').classify(), ph_boundary)
+    assert isinstance(PhoElement('.').classify(), PhoBoundary)
     # Test stress
-    assert isinstance(ph_element("ˈ").classify(), ph_stress)
+    assert isinstance(PhoElement("ˈ").classify(), PhoStress)
     
 def test_ipa_parser_simple():
     # Test basic segment
     assert ipa_parser("pʰ") == [
-        [ph_element('p'), ph_element('ʰ')]
+        [PhoElement('p'), PhoElement('ʰ')]
     ]
     
     # Test multiple segments and whitespace handling
     assert ipa_parser(" \tpʰæt kːaʧ\n suto \r\n  ") == [
-        [ph_element('p'), ph_element('ʰ')],
-        [ph_element('æ')],
-        [ph_element('t')],
-        [ph_element(' ')],
-        [ph_element('k'), ph_element('ː')],
-        [ph_element('a')],
-        [ph_element('ʧ')],
-        [ph_element(' ')],
-        [ph_element('s')],
-        [ph_element('u')],
-        [ph_element('t')],
-        [ph_element('o')]
+        [PhoElement('p'), PhoElement('ʰ')],
+        [PhoElement('æ')],
+        [PhoElement('t')],
+        [PhoElement(' ')],
+        [PhoElement('k'), PhoElement('ː')],
+        [PhoElement('a')],
+        [PhoElement('ʧ')],
+        [PhoElement(' ')],
+        [PhoElement('s')],
+        [PhoElement('u')],
+        [PhoElement('t')],
+        [PhoElement('o')]
     ]
     
     # Test left and right diacritics and primary stress
     assert ipa_parser("ⁿaˈʧ̥ukʰⁿaˈʧ̥") == [
-        [ph_element('ⁿ'), ph_element('a')],
-        [ph_element('ˈ')],
-        [ph_element('ʧ'), ph_element('̥')],
-        [ph_element('u')],
-        [ph_element('k'), ph_element('ʰ')],
-        [ph_element('ⁿ'), ph_element('a')],
-        [ph_element('ˈ')],
-        [ph_element('ʧ'), ph_element('̥')]
+        [PhoElement('ⁿ'), PhoElement('a')],
+        [PhoElement('ˈ')],
+        [PhoElement('ʧ'), PhoElement('̥')],
+        [PhoElement('u')],
+        [PhoElement('k'), PhoElement('ʰ')],
+        [PhoElement('ⁿ'), PhoElement('a')],
+        [PhoElement('ˈ')],
+        [PhoElement('ʧ'), PhoElement('̥')]
     ]
     
     # Test syllable and foot boundary characters
     assert ipa_parser("ˌ‖|ᶬhi.toˡˈ|ᵐtə̃") == [
-        [ph_element('ˌ')],
-        [ph_element('‖')],
-        [ph_element('|')],
-        [ph_element('ᶬ'), ph_element('h')],
-        [ph_element('i')],
-        [ph_element('.')],
-        [ph_element('t')],
-        [ph_element('o'), ph_element('ˡ')],
-        [ph_element('ˈ')],
-        [ph_element('|')],
-        [ph_element('ᵐ'), ph_element('t')],
-        [ph_element('ə'), ph_element('̃')]
+        [PhoElement('ˌ')],
+        [PhoElement('‖')],
+        [PhoElement('|')],
+        [PhoElement('ᶬ'), PhoElement('h')],
+        [PhoElement('i')],
+        [PhoElement('.')],
+        [PhoElement('t')],
+        [PhoElement('o'), PhoElement('ˡ')],
+        [PhoElement('ˈ')],
+        [PhoElement('|')],
+        [PhoElement('ᵐ'), PhoElement('t')],
+        [PhoElement('ə'), PhoElement('̃')]
     ]
     
     # Test invalid characters
@@ -79,19 +79,19 @@ def test_ipa_parser_invalid_sequences():
 def test_ipa_parser_role_switchers():
     # Test role-switched diacritics
     assert ipa_parser("ʰ̵toᵐ̵ pⁿ̵oˢ") == [
-        [ph_element('ʰ'), ph_element('̵'), ph_element('t')],
-        [ph_element('o'), ph_element('ᵐ'), ph_element('̵')],
-        [ph_element(' ')],
-        [ph_element('p'), ph_element('ⁿ'), ph_element('̵')],
-        [ph_element('o'), ph_element('ˢ')]
+        [PhoElement('ʰ'), PhoElement('̵'), PhoElement('t')],
+        [PhoElement('o'), PhoElement('ᵐ'), PhoElement('̵')],
+        [PhoElement(' ')],
+        [PhoElement('p'), PhoElement('ⁿ'), PhoElement('̵')],
+        [PhoElement('o'), PhoElement('ˢ')]
     ]
 
 def test_ipa_parser_compound_phones():
     # Test compound phones and ligatures
     assert ipa_parser("t͡ʃo͡ʊ t͡sʧ") == [
-        [ph_element('t'), ph_element('͡'), ph_element('ʃ')],
-        [ph_element('o'), ph_element('͡'), ph_element('ʊ')], 
-        [ph_element(' ')],
-        [ph_element('t'), ph_element('͡'), ph_element('s')],
-        [ph_element('ʧ')]
+        [PhoElement('t'), PhoElement('͡'), PhoElement('ʃ')],
+        [PhoElement('o'), PhoElement('͡'), PhoElement('ʊ')], 
+        [PhoElement(' ')],
+        [PhoElement('t'), PhoElement('͡'), PhoElement('s')],
+        [PhoElement('ʧ')]
     ]
