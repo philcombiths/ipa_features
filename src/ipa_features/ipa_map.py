@@ -26,9 +26,14 @@ To Do:
 
 """
 import os
+import logging
+from ipa_features.logging_config import setup_logging
 from typing import List
 
 import pandas as pd
+
+_logger = logging.getLogger(__name__)
+setup_logging(logging.DEBUG)
 
 pkg_dir = os.path.dirname(__file__)
 data_src = os.path.join(pkg_dir, 'IPA_Symbol_Table.csv')
@@ -385,14 +390,14 @@ def ipa_parser(input: str) -> List[List[ph_element]]:
     last_char_memory: str = ""
     has_base: bool = False
     word_count: int = 1
-    
     segment_enders: List[str] = ['base', 'diacritic_left', 'boundary', 'stress']
+    _logger.info("Initializing variables")
     
     # Parse input character by character
     for i, char in enumerate(input.strip()): # i is for unimplemented position counter
-        pass
-        if i == 32:
+        if i==8:
             pass
+        _logger.info("Parsing character %s: %s", i, char)
         if char.isspace():
             if last_char_memory.isspace():
                 continue
@@ -407,7 +412,7 @@ def ipa_parser(input: str) -> List[List[ph_element]]:
         
         if char in ipa_df.index:
             ph = ph_element(char)
-                
+            _logger.info("\tph_element object created for %s", char)
             # If boundary or stress marker, append directly to memory without assigning to a segment.
             if ph.role in ['boundary', 'stress']:
                 memory.append(segment_memory) # Also starts new segment
@@ -416,15 +421,16 @@ def ipa_parser(input: str) -> List[List[ph_element]]:
                 #memory.append(ph.symbol) # debugging
                 has_base = False
                 last_char_memory = char
+                _logger.info("\tBoundary or stress marker")
                 continue
             
             # If no base glyph yet, add to segment_memory
             if not has_base:
                 segment_memory.append(ph)
-                #segment_memory.append(ph.symbol) # debugging
-                if ph.role == 'base':
+                if ph.role == 'base': # if base, set has_base to True
                     has_base = True
                 last_char_memory = char
+                _logger.info("\tAdded to segment memory")
                 continue
             
             # If base glyph already exists
@@ -432,17 +438,22 @@ def ipa_parser(input: str) -> List[List[ph_element]]:
                 # Determine if it's the end of a segment, then add to memory and start new segment
                 if ph.role in segment_enders:
                     memory.append(segment_memory)
+                    _logger.info("\tPrevious segment complete. Added to memory.")
                     segment_memory = [ph]
-                    #segment_memory = [ph.symbol] # debugging
-                    has_base = True
+                    _logger.info("****Segment memory cleared.****")
+                    _logger.info("\tCharacter: %s added to segment memory.", char)
+                    if ph.role == 'base': # if base, set has_base to True
+                        has_base = True
+                    else:
+                        has_base = False # if not base, set has_base to False
                     last_char_memory = char
                     continue
                     
                 # If not end of segment, add to segment_memory
                 else:
                     segment_memory.append(ph)
-                    #segment_memory.append(ph.symbol) # debugging
                     last_char_memory = char
+                    _logger.info("\tAdded to existing segment memory.")
                     continue
             
             if ph.role == 'diacritic_left' or ph.role == 'diacritic_right':
@@ -458,9 +469,12 @@ def ipa_parser(input: str) -> List[List[ph_element]]:
             
             # TODO: Implement handling of compound phones and ligatures
         else:
+            _logger.error("Error: %s not in reference ipa_df", char)
             raise ValueError (f"Error: {char} not in reference ipa_df")
     memory.append(segment_memory) # Store final segment
-    debug = [[i.symbol for i in row] for row in memory] # debug
+    _logger.info("\tComplete segment stored to memory.")
+    memory_debug = [[i.symbol for i in row] for row in memory]
+    _logger.debug("Memory dump: %s", memory_debug)
     return memory
 
 if __name__ == "__main__":
@@ -473,6 +487,8 @@ if __name__ == "__main__":
     test3 = 'k̪ʰaˈʧu.ʧaː'
     test4 = 'k̪ʰⁿaˈʧ̥uᵊ.ã̬̝ˡː'
     test5 = 'k̪ʰⁿaˈʧ̥uᵊ.ã̬̝ˡː     pʰæt\nkʰaʧ suto'
+    test6 = 'kʰⁿaˈʧ̥u'
+    test7 = "ⁿaˈʧ̥ukʰⁿaˈʧ̥"
     
-    output = ipa_parser(test5)
+    output = ipa_parser(test7)
     pass

@@ -22,7 +22,7 @@ def test_ipa_parser_simple():
     ]
     
     # Test multiple segments and whitespace handling
-    assert ipa_parser(" pʰæt kːaʧ suto   ") == [
+    assert ipa_parser(" pʰæt kːaʧ\n suto   ") == [
         [ph_element('p'), ph_element('ʰ')],
         [ph_element('æ')],
         [ph_element('t')],
@@ -37,6 +37,18 @@ def test_ipa_parser_simple():
         [ph_element('o')]
     ]
     
+    # Test
+    assert ipa_parser("ⁿaˈʧ̥ukʰⁿaˈʧ̥") == [
+        [ph_element('ⁿ'), ph_element('a')],
+        [ph_element('ˈ')],
+        [ph_element('ʧ'), ph_element('̥')],
+        [ph_element('u')],
+        [ph_element('k'), ph_element('ʰ')],
+        [ph_element('ⁿ'), ph_element('a')],
+        [ph_element('ˈ')],
+        [ph_element('ʧ'), ph_element('̥')]
+    ]
+        
     # Test invalid characters
     with pytest.raises(ValueError):
         ipa_parser("Ђ")
