@@ -89,11 +89,6 @@ class PhoElement:
 
     def __init__(self, string, tier="actual", parent=None, position=None):
         # Initialize attributes
-        if type(string) is not str: # Workaround for use with Phon_query_to_csv.py
-            self.string = ""
-            self.symbol = ""
-            return
-            
         if string.isspace():
             self.string = " "
             self.symbol = " "
@@ -399,9 +394,6 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
         list: A list of ph_segment objects representing the parsed segments.
 
     """
-    if type(input_str) != str: # Workaround for Phon_query_to_csv.py
-        input_str = ""
-        return input_str
     
     # Remove brackets and slashes from transcription input
     input_str = re.sub(r"[\[\]\\\/]", " ", input_str)
@@ -409,7 +401,7 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
     # If input contains role switcher, return empty list
     # TODO: Add support for role switcher
     if "̵" in input_str:
-        return [""]
+        return ['']
     
     # Initialize variables
     transcript_memory: List[List[PhoElement]] = []
@@ -508,37 +500,6 @@ def segment_generator(input_str):
         except ValueError: # Skip invalid segments (e.g., boundaries)
             # TODO: Implement handling of non-segments
             pass
-
-def get_bases_string(input_str):
-    if not isinstance(input_str, str):
-        input_str = ""
-        return input_str
-    bases_string = ""
-    ipa_parser_list = ipa_parser(input_str)
-    for seg in ipa_parser_list:
-        try:
-            base_string = PhoSegment(seg).base[0].string # TODO: Handle multiple bases
-            bases_string += base_string
-        except ValueError: # Skip invalid segments (e.g., boundaries)
-            # TODO: Implement handling of non-segments
-            pass
-    return bases_string
-
-def get_bases(input_str):
-    if not isinstance(input_str, str):
-        return [""]
-    bases_list = []
-    ipa_parser_list = ipa_parser(input_str)
-    for seg in ipa_parser_list:
-        if not seg: # Workaround for segments with role switcher
-            return [""]
-        try:
-            base = PhoSegment(seg).base[0] # TODO: Handle multiple bases
-            bases_list.append(base)
-        except ValueError: # Skip invalid segments (e.g., boundaries)
-            # TODO: Implement handling of non-segments
-            pass
-    return bases_list
 
 if __name__ == "__main__":
     RESULT1 = PhoElement("s")
