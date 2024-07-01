@@ -1,5 +1,5 @@
 import pytest
-from ipa_features.ipa_map import ipa_parser, PhoElement, PhoBase, PhoConsonant, PhoVowel, PhoDiacritic, PhoLigature, PhoBoundary, PhoStress
+from ipa_features.ipa_map import ipa_parser, segment_generator, PhoElement, PhoBase, PhoConsonant, PhoVowel, PhoDiacritic, PhoLigature, PhoBoundary, PhoStress, PhoSegment
 
 def test_classify():
     """Test PhoElement.classify()."""
@@ -105,3 +105,50 @@ def test_ipa_parser_compound_phones():
         [PhoElement('t'), PhoElement('͡'), PhoElement('s')],
         [PhoElement('ʧ')]
     ]
+    
+def test_phosegment():
+    """Test PhoSegment."""
+    
+    with pytest.raises(ValueError):
+        PhoSegment([PhoElement('ˌ').classify()])
+        
+    segment1 = PhoSegment([PhoDiacritic('ᵐ'), PhoConsonant('t')])
+    
+    assert segment1.string == 'ᵐt'
+    assert segment1.base == [PhoConsonant('t')]
+    assert segment1.components == [PhoDiacritic('ᵐ'), PhoConsonant('t')]
+    assert segment1.left_diacritics == [PhoDiacritic('ᵐ')]
+    assert segment1.right_diacritics == []
+    
+    segment2_components = [
+        PhoDiacritic('ᶬ'), 
+        PhoConsonant('h'),
+        PhoDiacritic('̪'),
+        PhoDiacritic('̯'),
+        PhoDiacritic('̞'),
+        PhoDiacritic('ʷ'),
+        PhoDiacritic('ʴ'),
+        PhoDiacritic('ʲ'),
+        PhoDiacritic('ː')
+    ]
+    segment2 = PhoSegment(segment2_components)
+    assert segment2.string =='ᶬh̪̯̞ʷʴʲː'
+    assert segment2.base == [PhoConsonant('h')]
+    assert segment2.components == segment2_components
+    assert segment2.left_diacritics == [PhoDiacritic('ᶬ')]
+    assert segment2.right_diacritics == [
+        PhoDiacritic('̪'),
+        PhoDiacritic('̯'),
+        PhoDiacritic('̞'),
+        PhoDiacritic('ʷ'),
+        PhoDiacritic('ʴ'),
+        PhoDiacritic('ʲ'),
+        PhoDiacritic('ː')
+    ]
+
+def test_segment_generator():
+    """Test segment generator."""
+    seg_gen1 = segment_generator("ˌ‖|ᶬhi.oˡ")
+    assert next(seg_gen1) == PhoSegment([PhoDiacritic('ᶬ'), PhoConsonant('h')])
+    assert next(seg_gen1) == PhoSegment([PhoVowel('i')])
+    assert next(seg_gen1) == PhoSegment([PhoVowel('o'), PhoDiacritic('ˡ')])

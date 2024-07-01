@@ -102,7 +102,7 @@ class PhoElement:
             self.string = string.strip()
             assert (
                 len(self.string) == 1
-            ), f"ph_element string ({self.string}) must be a single character"
+            ), f"PhoElement string ({self.string}) must be a single character"
             self.tier = tier
             self.parent = parent
             self.position = position
@@ -123,7 +123,7 @@ class PhoElement:
             self.type = self.series.get("Type")
             self.role = self.series.get("Role")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.display
 
     def __repr__(self) -> str:
@@ -231,7 +231,7 @@ class PhoElement:
                 self.string, tier=self.tier, parent=self.parent, position=self.position
             )
         else:
-            _logger.warning("ph_element unable to be classified")
+            _logger.warning("PhoElement unable to be classified")
             return PhoElement(
                 self.string, tier=self.tier, parent=self.parent, position=self.position
             )
@@ -295,18 +295,86 @@ class PhoStress(PhoElement):
         super().__init__(string, tier=tier, parent=parent, position=position)
         self.subclass = "stress"
 
-class PhoSegment(PhoElement):
-    """Generates a segment, including base and combining elements."""
-    def __init__(self, string, tier="actual", parent=None, position=None):
-        super().__init__(string, tier=tier, parent=parent, position=position)
-        self.subclass = "ph_segment"
-        self.base = None  # To be implemented
-        self.diacritics = None  # To be implemented
-        self.right_diacritics = None  # To be implemented
-        self.left_diacritics = None  # To be implemented
-        self.stress = None  # To be implemented
-        self.syllable = None  # To be implemented
-        self.word = None  # To be implemented
+# TODO: Implement combining features for components in PhoSegment
+class PhoSegment:
+    """
+    Represents a segment, including base and combining elements.
+    """
+    def __init__(self, components):
+        """
+        Initializes a PhoSegment.
+
+        Args:
+            components (list of PhoElement): The components of the segment.
+        """
+        has_base = any(component.role == "base" for component in components)
+        if not has_base:
+            raise ValueError("PhoSegment must have at least one base component.")
+        
+        self.components = components
+        self.string = "".join([component.symbol for component in components])
+        self.base = [component for component in components if component.role == "base"]
+        self.right_diacritics = [component for component in components if component.role=="diacritic_right"]
+        self.left_diacritics = [component for component in components if component.role=="diacritic_left"]
+        self.stress = None # To be implemented
+        self.syllable = None # To be implemented
+        self.word = None # To be implemented
+        
+    def __str__(self):
+        return self.string
+     
+    def __repr__(self):
+        b_string = f"base=[{', '.join([base.display for base in self.base])!r}], "
+        diacritics = self.right_diacritics + self.left_diacritics
+        d_string = f"diacritics=[{ ', '.join([d.display for d in diacritics])!r}])"
+        return (
+            f"{type(self).__name__}"
+            f"(string={self.string!r}, "
+            f"{b_string}"
+            f"{d_string}"
+            # f"base=[{', '.join([base.display for base in self.base])!r}], "
+            # f"diacritics={d_string!r})"
+        )
+    
+    
+    
+    def __eq__(self, other):
+        if isinstance(other, PhoSegment):
+            return self.components == other.components
+        return NotImplemented
+    
+    def __ne__(self, other):
+        if isinstance(other, PhoSegment):
+            return self.components != other.components
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self.string)
+
+    def __len__(self):
+        return len(self.components)
+
+    def __iter__(self):
+        return iter(self.components)
+    
+    def __getitem__(self, index):
+        return self.components[index]
+    
+    def __contains__(self, item):
+        if isinstance(item, str):
+            return item in self.string
+        return item in self.components
+    
+    # def __init__(self, string, tier="actual", parent=None, position=None):
+    #     super().__init__(string, tier=tier, parent=parent, position=position)
+    #     self.subclass = "ph_segment"
+    #     self.base = None  # To be implemented
+    #     self.diacritics = None  # To be implemented
+    #     self.right_diacritics = None  # To be implemented
+    #     self.left_diacritics = None  # To be implemented
+    #     self.stress = None  # To be implemented
+    #     self.syllable = None  # To be implemented
+    #     self.word = None  # To be implemented
     # TODO: def get_base() and get_diacritics()
 
 def ipa_parser(input_str: str) -> List[List[PhoElement]]:
@@ -330,6 +398,7 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
     input_str = re.sub(r"[\[\]\\\/]", " ", input_str)
     
     # If input contains role switcher, return empty list
+    # TODO: Add support for role switcher
     if "̵" in input_str:
         return ['']
     
@@ -361,7 +430,7 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
 
         if char in ipa_df.index:
             ph = PhoElement(char).classify()
-            _logger.info("\tph_element object created for %s", char)
+            _logger.info("\tPhoElement object created for %s", char)
             # If boundary or stress marker, append directly to memory
             if ph.role in ["boundary", "stress"]:
                 if not has_base:
@@ -422,6 +491,14 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
     _logger.debug("Memory dump: %s", memory_debug)
     return transcript_memory
 
+def segment_generator(input_str):
+    ipa_parser_list = ipa_parser(input_str)
+    for seg in ipa_parser_list:
+        try:
+            yield PhoSegment(seg)
+        except ValueError: # Skip invalid segments (e.g., boundaries)
+            # TODO: Implement handling of non-segments
+            pass
 
 if __name__ == "__main__":
     RESULT1 = PhoElement("s")
@@ -433,7 +510,8 @@ if __name__ == "__main__":
     TEST4 = "k̪ʰⁿaˈʧ̥uᵊ.ã̬̝ˡː     pʰæt\nkʰaʧ suto"
     TEST5 = "kʰⁿaˈʧ̥u"
     TEST6 = "ⁿaˈʧ̥ukʰⁿaˈʧ̥"
-    TEST7 = "ˌ‖|ᶬhi.toˡˈ|ᵐtə̃"
-
-    output = ipa_parser(TEST7)
-    print(output)
+    TEST7 = "ˌ‖|ᶬhi.toˡˈ|ᵐtə̃ pʰæt\nkʰaʧ suto"
+    parsed = ipa_parser(TEST5)
+    segment_test = PhoSegment(parsed[0])
+    seg_gen = segment_generator(TEST7)
+    pass
