@@ -3,7 +3,7 @@
 ipa_features version: 0.2
 
 Created on Oct 10, 2022
-Updated on Jun 30, 2024
+Updated on Jul 01, 2024
 $author: Philip Combiths
 
 Reference, extract and manipulate IPA segments from a Phon-based reference.
@@ -22,7 +22,7 @@ To Do:
 import logging
 import os
 import re
-from typing import List, Union
+from typing import List
 
 import pandas as pd
 
