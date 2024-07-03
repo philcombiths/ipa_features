@@ -19,7 +19,14 @@ def test_classify():
     assert isinstance(PhoElement('.').classify(), PhoBoundary)
     # Test stress
     assert isinstance(PhoElement("ˈ").classify(), PhoStress)
-    
+
+def test_segment_class(): # TODO: Compelete this
+    assert segment_generator("ʧ̥")[0]
+    assert segment_generator("p")
+    assert segment_generator("pʰ")
+    assert segment_generator("ⁿkː")
+    pass
+
 def test_ipa_parser_simple():
     """Test most Phon-compatible IPA sequences."""
     # Test basic segment
