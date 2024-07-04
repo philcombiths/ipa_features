@@ -20,13 +20,6 @@ def test_classify():
     # Test stress
     assert isinstance(PhoElement("ˈ").classify(), PhoStress)
 
-def test_segment_class(): # TODO: Compelete this
-    assert segment_generator("ʧ̥")[0]
-    assert segment_generator("p")
-    assert segment_generator("pʰ")
-    assert segment_generator("ⁿkː")
-    pass
-
 def test_ipa_parser_simple():
     """Test most Phon-compatible IPA sequences."""
     # Test basic segment
@@ -112,33 +105,40 @@ def test_ipa_parser_compound_phones():
         [PhoElement('t'), PhoElement('͡'), PhoElement('s')],
         [PhoElement('ʧ')]
     ]
-    
+
+# Define segments for teseting
+segment1 = PhoSegment([PhoDiacritic('ᵐ'), PhoConsonant('t')])
+segment2_components = [
+    PhoDiacritic('ᶬ'), 
+    PhoConsonant('h'),
+    PhoDiacritic('̪'),
+    PhoDiacritic('̯'),
+    PhoDiacritic('̞'),
+    PhoDiacritic('ʷ'),
+    PhoDiacritic('ʴ'),
+    PhoDiacritic('ʲ'),
+    PhoDiacritic('ː')
+]
+segment2 = PhoSegment(segment2_components)
+
+segment3 = PhoSegment([
+    PhoDiacritic('ᶬ'), 
+    PhoConsonant('t'), 
+    PhoLigature('͡'), 
+    PhoConsonant('ʃ'), 
+    PhoDiacritic('ʷ'),
+])
+
 def test_phosegment():
     """Test PhoSegment."""
-    
     with pytest.raises(ValueError):
         PhoSegment([PhoElement('ˌ').classify()])
-        
-    segment1 = PhoSegment([PhoDiacritic('ᵐ'), PhoConsonant('t')])
-    
     assert segment1.string == 'ᵐt'
     assert segment1.base == [PhoConsonant('t')]
     assert segment1.components == [PhoDiacritic('ᵐ'), PhoConsonant('t')]
     assert segment1.left_diacritics == [PhoDiacritic('ᵐ')]
     assert segment1.right_diacritics == []
     
-    segment2_components = [
-        PhoDiacritic('ᶬ'), 
-        PhoConsonant('h'),
-        PhoDiacritic('̪'),
-        PhoDiacritic('̯'),
-        PhoDiacritic('̞'),
-        PhoDiacritic('ʷ'),
-        PhoDiacritic('ʴ'),
-        PhoDiacritic('ʲ'),
-        PhoDiacritic('ː')
-    ]
-    segment2 = PhoSegment(segment2_components)
     assert segment2.string =='ᶬh̪̯̞ʷʴʲː'
     assert segment2.base == [PhoConsonant('h')]
     assert segment2.components == segment2_components
@@ -152,6 +152,13 @@ def test_phosegment():
         PhoDiacritic('ʲ'),
         PhoDiacritic('ː')
     ]
+
+def test_phosegment_get_base():
+    assert segment1.get_base(output_type=str) == 't'
+    assert segment1.get_base(output_type=PhoBase) == PhoBase('t')
+    assert segment2.get_base(output_type=str) == 'h'
+    assert segment2.get_base(output_type=PhoBase) == PhoBase('h')
+    # TODO: assert segment 3 to test compoound base
 
 def test_segment_generator():
     """Test segment generator."""

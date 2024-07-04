@@ -70,16 +70,18 @@ class PhoElement:
     Represents a phonetic element.
 
     Attributes:
-        - string: A single string IPA character or combined character in unicode utf-8.
-        - subclass: The subclass of the element.
-        - series: The corresponding series in the IPA_Symbol_Table.csv file.
-        - role: The role of the element, specific to this package, such as 'base', 'boundary', etc.
-        - display: The display string of the element, extracted from Phon.
-        - description: The description of the element, extracted from Phon.
-        - name: The name of the element, extracted from Phon.
-        - type: The type of the element, extracted from Phon.
-        - symbol: The symbol of the element, used as index in ipa_df.
-        - unicode: The unicode value(s) of the element, extracted from Phon.
+        - string (str): A single string IPA character or combined character
+        - subclass (str): The subclass of the element.
+        - series (pandas.Series): The corresponding series from IPA_Symbol_Table.csv.
+        - role (str): The role of the element, specific to this package, such as
+            'base', 'boundary', etc.
+        - display (str): The display string of the element, extracted from Phon.
+        - description (str): The description of the element, extracted from Phon.
+        - name (str): The name of the element, extracted from Phon.
+        - type (str): The type of the element, extracted from Phon.
+        - symbol (str): The symbol of the element, used as index in ipa_df.
+        - unicode (str or list): The unicode value(s) of the element, from Phon.
+        - features (dict): A dictionary of features extracted from Phon.
         TODO: Implement these dummy attributes:
             - tier: Designated Phon transcription tier. Should be one of ['target', 'actual'].
                     Default is 'actual'. Not implemented.
@@ -89,12 +91,18 @@ class PhoElement:
 
     def __init__(self, string, tier="actual", parent=None, position=None):
         # Initialize attributes
-        if type(string) is not str: # Workaround for use with Phon_query_to_csv.py
+        self.tier = tier
+        self.parent = parent
+        self.position = position
+        self.features = dict()
+        self.subclass = None
+        
+        if not isinstance(string, str): # Workaround for NaN to use with phon_query_to_csv.py
             self.string = ""
             self.symbol = ""
             return
             
-        if string.isspace():
+        if string.isspace(): # Handle whitespace string as word boundary
             self.string = " "
             self.symbol = " "
             self.display = " "
@@ -102,31 +110,29 @@ class PhoElement:
             self.name = "Whitespace"
             self.type = "Suprasegmental"
             self.role = "boundary"
-            self.subclass = None
-        else:
-            self.string = string.strip()
-            assert (
-                len(self.string) == 1
-            ), f"PhoElement string ({self.string}) must be a single character"
-            self.tier = tier
-            self.parent = parent
-            self.position = position
-            self.subclass = None
-            try:
-                self.series = ipa_df.loc[
-                    self.string
-                ]  # Get pd.Series for the given string
-                self.symbol = self.series.name
-                self.description = self.series.get("Description")
-                self.display = self.series.get("Symbol-Display")
-                self.name = self.series.get("Name")
-                self.unicode = self.series.get("Unicode")
-                self.type = self.series.get("Type")
-                self.role = self.series.get("Role")
-            except KeyError:
-                print(f"Warning: {self.string} not found in IPA_Symbol_Table.csv")
-                self.series = None
-                self.symbol = self.string
+            return
+
+        # For all other input
+        self.string = string.strip()
+        assert (
+            len(self.string) == 1
+        ), f"PhoElement string ({self.string}) must be a single character"
+        try:
+            self.series = ipa_df.loc[
+                self.string
+            ]  # Get pd.Series for the given string
+            self.symbol = self.series.name
+            self.description = self.series.get("Description")
+            self.display = self.series.get("Symbol-Display")
+            self.name = self.series.get("Name")
+            self.unicode = self.series.get("Unicode")
+            self.type = self.series.get("Type")
+            self.role = self.series.get("Role")
+        except KeyError:
+            print(f"Warning: {self.string} not found in IPA_Symbol_Table.csv")
+            self.series = None
+            self.symbol = self.string
+            self.description = "Unknown"
 
 
     def __str__(self) -> str:
@@ -242,7 +248,6 @@ class PhoElement:
                 self.string, tier=self.tier, parent=self.parent, position=self.position
             )
 
-
 class PhoBase(PhoElement):
     """Represents a base glyph for a segment."""
     def __init__(self, string, tier="actual", parent=None, position=None):
@@ -250,24 +255,40 @@ class PhoBase(PhoElement):
         self.subclass = "base"
     # TODO: Implement PhoCompound subclass
 
-
 class PhoConsonant(PhoBase):
     """Generates a consonant. Subclass of PhoBase."""
     def __init__(self, string, tier="actual", parent=None, position=None):
         super().__init__(string, tier=tier, parent=parent, position=position)
         self.subclass = "consonant"
-        self.voice = self.series.get("Voice")
-        self.place = self.series.get("Place")
-        self.manner = self.series.get("Manner")
-        self.sonority = self.series.get("Sonority")
-        self.eml = self.series.get("EML")
+        self.features.update(
+            {
+                "Voice": self.series.get("Voice"),
+                "Place": self.series.get("Place"),
+                "Manner": self.series.get("Manner"),
+                "Sonority": self.series.get("Sonority"),
+                "EML": self.series.get("EML"),
+            }
+        )
 
 class PhoVowel(PhoBase):
     """Generates a vowel. Sublcass of PhoBase"""
     def __init__(self, string, tier="actual", parent=None, position=None):
         super().__init__(string, tier=tier, parent=parent, position=position)
         self.subclass = "vowel"
-        self.vowel_characteristics = None  # To be implemented from Series
+        self.features.update(
+            {
+                "Voice": self.series.get("Voice"),
+                "Sonority": self.series.get("Sonority"),
+                "Back": self.series.get("Back"),
+                "Central": self.series.get("Central"),
+                "Front": self.series.get("Front"),
+                "Close": self.series.get("Close"),
+                "Mid": self.series.get("Mid"),
+                "Open": self.series.get("Open"),
+                "Round": self.series.get("Round"),
+                "Rhotic": self.series.get("Rhotic"),
+            }
+        )
 
 class PhoDiacritic(PhoElement):
     """Generates a diacritic or combining phonetic segment."""
@@ -277,6 +298,11 @@ class PhoDiacritic(PhoElement):
         self.role_switcher = False  # If followed by role switcher. To be implemented.
         self.attach_direction = None  # To be implemented
         self.base = None  # To be implemented
+        self.features.update(
+            {
+                # TODO: Implement features for diacritics
+            }
+        )
 
 class PhoLigature(PhoElement):
     """Generates a ligature segment that combines two base glyphs."""
@@ -301,8 +327,8 @@ class PhoStress(PhoElement):
     def __init__(self, string, tier="actual", parent=None, position=None):
         super().__init__(string, tier=tier, parent=parent, position=position)
         self.subclass = "stress"
+    # TODO: Implement stress on PhoSegment and future PhoSyllable.
 
-# TODO: Implement combining features for components in PhoSegment
 class PhoSegment:
     """
     Represents a segment, including base and combining elements.
@@ -326,6 +352,9 @@ class PhoSegment:
         self.stress = None # To be implemented
         self.syllable = None # To be implemented
         self.word = None # To be implemented
+        self.features = dict(
+            # TODO: Implement combine features of components
+        )
         
     def __str__(self):
         return self.string
