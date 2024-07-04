@@ -247,6 +247,11 @@ class PhoElement:
             return PhoElement(
                 self.string, tier=self.tier, parent=self.parent, position=self.position
             )
+    def get_feature(self, feature):
+        """Get the value of a feature."""
+        feature = feature[0].upper() + feature[1:] # capitalize first letter
+        self.features.get(feature)
+        
 
 class PhoBase(PhoElement):
     """Represents a base glyph for a segment."""
@@ -260,7 +265,7 @@ class PhoConsonant(PhoBase):
     def __init__(self, string, tier="actual", parent=None, position=None):
         super().__init__(string, tier=tier, parent=parent, position=position)
         self.subclass = "consonant"
-        self.features.update(
+        self.features.update( # TODO: Handle missing features
             {
                 "Voice": self.series.get("Voice"),
                 "Place": self.series.get("Place"),
@@ -352,9 +357,13 @@ class PhoSegment:
         self.stress = None # To be implemented
         self.syllable = None # To be implemented
         self.word = None # To be implemented
-        self.features = dict(
-            # TODO: Implement combine features of components
-        )
+        self.features = dict()
+        self.features.update(self.get_base(output_type=PhoBase).classify().features)
+        
+        # TODO: Implement combined features from all components
+        # for component in components:
+        #     self.features.update(component.features)
+        #     TODO Handle overwriting features if already present
         
     def __str__(self):
         return self.string
@@ -400,21 +409,7 @@ class PhoSegment:
         return item in self.components
     
     # Custom methods
-    # def get_base(self):
-    #     """
-    #     Returns the base element(s) of the object.
-
-    #     If there is more than one base element, it returns a list of all the base elements.
-    #     If there is only one base element, it returns that single base element.
-
-    #     Returns:
-    #         list or PhoElement: The base element(s) of the object.
-    #     """
-    #     if len(self.base) > 1:
-    #         return self.base
-    #     else:
-    #         return self.base[0]
-    
+    ## TODO: def get_diacritics()
     def get_base(self, output_type=str):
         """
         Returns the base elements of the PhoSegment.
@@ -440,19 +435,10 @@ class PhoSegment:
                 return self.base[0].string
             if output_type == PhoBase:
                 return self.base[0]
-    
-    
-    # def __init__(self, string, tier="actual", parent=None, position=None):
-    #     super().__init__(string, tier=tier, parent=parent, position=position)
-    #     self.subclass = "ph_segment"
-    #     self.base = None  # To be implemented
-    #     self.diacritics = None  # To be implemented
-    #     self.right_diacritics = None  # To be implemented
-    #     self.left_diacritics = None  # To be implemented
-    #     self.stress = None  # To be implemented
-    #     self.syllable = None  # To be implemented
-    #     self.word = None  # To be implemented
-    # TODO: def get_diacritics()
+    def get_feature(self, feature):
+        """Get the value of a feature."""
+        feature = feature[0].upper() + feature[1:] # capitalize first letter
+        return self.features.get(feature)
 
 def ipa_parser(input_str: str) -> List[List[PhoElement]]:
     """
@@ -674,4 +660,7 @@ if __name__ == "__main__":
     parsed = ipa_parser(TEST5)
     segment_test = PhoSegment(parsed[0])
     seg_gen = segment_generator(TEST7)
+    segment = next(seg_gen)
+    print(segment)
+    print(segment.get_feature("Voice"))
     pass
