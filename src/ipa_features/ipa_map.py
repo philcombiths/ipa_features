@@ -248,6 +248,7 @@ class PhoBase(PhoElement):
     def __init__(self, string, tier="actual", parent=None, position=None):
         super().__init__(string, tier=tier, parent=parent, position=position)
         self.subclass = "base"
+    # TODO: Implement PhoCompound subclass
 
 
 class PhoConsonant(PhoBase):
@@ -370,35 +371,46 @@ class PhoSegment:
         return item in self.components
     
     # Custom methods
-    def get_base(self):
-        """
-        Returns the base element(s) of the object.
+    # def get_base(self):
+    #     """
+    #     Returns the base element(s) of the object.
 
-        If there is more than one base element, it returns a list of all the base elements.
-        If there is only one base element, it returns that single base element.
+    #     If there is more than one base element, it returns a list of all the base elements.
+    #     If there is only one base element, it returns that single base element.
 
-        Returns:
-            list or PhoElement: The base element(s) of the object.
-        """
-        if len(self.base) > 1:
-            return self.base
-        else:
-            return self.base[0]
+    #     Returns:
+    #         list or PhoElement: The base element(s) of the object.
+    #     """
+    #     if len(self.base) > 1:
+    #         return self.base
+    #     else:
+    #         return self.base[0]
     
-    def get_base_string(self):
+    def get_base(self, output_type=str):
         """
-        Returns a string representation of the base elements of the object.
+        Returns the base elements of the PhoSegment.
 
-        If there is more than one base element, it concatenates the string representations of all the base elements.
-        If there is only one base element, it returns the string representation of that single base element.
+        Args:
+            output_type (optional): The type of output to return. Default is str.
+                                    If str, returns a string representation of the base elements.
+                                    If PhoBase, returns the base element.
 
         Returns:
-            str: A string representation of the base elements of the object.
+            str or PhoBase: The base elements of the object.
+            
+        Note: compound bases not implemented for output_type=PhoBAse
         """
         if len(self.base) > 1:
-            return "͡".join([b.string for b in self.base]) # Join compound phones with a ligature
+            if output_type == str: 
+                return "͡".join([b.string for b in self.base]) # Join compound phones with a ligature
+            if output_type == PhoBase:
+                raise ValueError(f"Segment: {self}. Handling of compound base not implemented yet. Exiting.")
+                # return self.base[0] # Not implemented
         else:
-            return self.base[0].string
+            if output_type == str:
+                return self.base[0].string
+            if output_type == PhoBase:
+                return self.base[0]
     
     
     # def __init__(self, string, tier="actual", parent=None, position=None):
@@ -411,7 +423,7 @@ class PhoSegment:
     #     self.stress = None  # To be implemented
     #     self.syllable = None  # To be implemented
     #     self.word = None  # To be implemented
-    # TODO: def get_base() and get_diacritics()
+    # TODO: def get_diacritics()
 
 def ipa_parser(input_str: str) -> List[List[PhoElement]]:
     """
@@ -530,6 +542,16 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
     _logger.debug("Memory dump: %s", memory_debug)
     return transcript_memory
 
+def get_segments(input_str, output='string'):
+    ipa_parser_list = ipa_parser(input_str)
+    for seg in ipa_parser_list:
+        try:
+            if output == 'string':
+                return PhoSegment(seg)
+        except ValueError: # Skip invalid segments (e.g., boundaries)
+            # TODO: Implement handling of non-segments
+            return None
+    
 def segment_generator(input_str):
     """
     Generates segments based on the input string by first parsing into components with ipa_parser.
