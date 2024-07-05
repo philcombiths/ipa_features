@@ -3,7 +3,7 @@
 ipa_features version: 0.2
 
 Created on Oct 10, 2022
-Updated on Jul 01, 2024
+Updated on Jun 30, 2024
 $author: Philip Combiths
 
 Reference, extract and manipulate IPA segments from a Phon-based reference.
@@ -22,7 +22,7 @@ To Do:
 import logging
 import os
 import re
-from typing import List
+from typing import List, Union
 
 import pandas as pd
 
@@ -70,18 +70,16 @@ class PhoElement:
     Represents a phonetic element.
 
     Attributes:
-        - string (str): A single string IPA character or combined character
-        - subclass (str): The subclass of the element.
-        - series (pandas.Series): The corresponding series from IPA_Symbol_Table.csv.
-        - role (str): The role of the element, specific to this package, such as
-            'base', 'boundary', etc.
-        - display (str): The display string of the element, extracted from Phon.
-        - description (str): The description of the element, extracted from Phon.
-        - name (str): The name of the element, extracted from Phon.
-        - type (str): The type of the element, extracted from Phon.
-        - symbol (str): The symbol of the element, used as index in ipa_df.
-        - unicode (str or list): The unicode value(s) of the element, from Phon.
-        - features (dict): A dictionary of features extracted from Phon.
+        - string: A single string IPA character or combined character in unicode utf-8.
+        - subclass: The subclass of the element.
+        - series: The corresponding series in the IPA_Symbol_Table.csv file.
+        - role: The role of the element, specific to this package, such as 'base', 'boundary', etc.
+        - display: The display string of the element, extracted from Phon.
+        - description: The description of the element, extracted from Phon.
+        - name: The name of the element, extracted from Phon.
+        - type: The type of the element, extracted from Phon.
+        - symbol: The symbol of the element, used as index in ipa_df.
+        - unicode: The unicode value(s) of the element, extracted from Phon.
         TODO: Implement these dummy attributes:
             - tier: Designated Phon transcription tier. Should be one of ['target', 'actual'].
                     Default is 'actual'. Not implemented.
@@ -91,18 +89,7 @@ class PhoElement:
 
     def __init__(self, string, tier="actual", parent=None, position=None):
         # Initialize attributes
-        self.tier = tier
-        self.parent = parent
-        self.position = position
-        self.features = dict()
-        self.subclass = None
-        
-        if not isinstance(string, str): # Workaround for NaN to use with phon_query_to_csv.py
-            self.string = ""
-            self.symbol = ""
-            return
-            
-        if string.isspace(): # Handle whitespace string as word boundary
+        if string.isspace():
             self.string = " "
             self.symbol = " "
             self.display = " "
@@ -110,29 +97,31 @@ class PhoElement:
             self.name = "Whitespace"
             self.type = "Suprasegmental"
             self.role = "boundary"
-            return
-
-        # For all other input
-        self.string = string.strip()
-        assert (
-            len(self.string) == 1
-        ), f"PhoElement string ({self.string}) must be a single character"
-        try:
-            self.series = ipa_df.loc[
-                self.string
-            ]  # Get pd.Series for the given string
-            self.symbol = self.series.name
-            self.description = self.series.get("Description")
-            self.display = self.series.get("Symbol-Display")
-            self.name = self.series.get("Name")
-            self.unicode = self.series.get("Unicode")
-            self.type = self.series.get("Type")
-            self.role = self.series.get("Role")
-        except KeyError:
-            print(f"Warning: {self.string} not found in IPA_Symbol_Table.csv")
-            self.series = None
-            self.symbol = self.string
-            self.description = "Unknown"
+            self.subclass = None
+        else:
+            self.string = string.strip()
+            assert (
+                len(self.string) == 1
+            ), f"PhoElement string ({self.string}) must be a single character"
+            self.tier = tier
+            self.parent = parent
+            self.position = position
+            self.subclass = None
+            try:
+                self.series = ipa_df.loc[
+                    self.string
+                ]  # Get pd.Series for the given string
+                self.symbol = self.series.name
+                self.description = self.series.get("Description")
+                self.display = self.series.get("Symbol-Display")
+                self.name = self.series.get("Name")
+                self.unicode = self.series.get("Unicode")
+                self.type = self.series.get("Type")
+                self.role = self.series.get("Role")
+            except KeyError:
+                print(f"Warning: {self.string} not found in IPA_Symbol_Table.csv")
+                self.series = None
+                self.symbol = self.string
 
 
     def __str__(self) -> str:
@@ -247,53 +236,32 @@ class PhoElement:
             return PhoElement(
                 self.string, tier=self.tier, parent=self.parent, position=self.position
             )
-    def get_feature(self, feature):
-        """Get the value of a feature."""
-        feature = feature[0].upper() + feature[1:] # capitalize first letter
-        self.features.get(feature)
-        
+
 
 class PhoBase(PhoElement):
     """Represents a base glyph for a segment."""
     def __init__(self, string, tier="actual", parent=None, position=None):
         super().__init__(string, tier=tier, parent=parent, position=position)
         self.subclass = "base"
-    # TODO: Implement PhoCompound subclass
+
 
 class PhoConsonant(PhoBase):
     """Generates a consonant. Subclass of PhoBase."""
     def __init__(self, string, tier="actual", parent=None, position=None):
         super().__init__(string, tier=tier, parent=parent, position=position)
         self.subclass = "consonant"
-        self.features.update( # TODO: Handle missing features
-            {
-                "Voice": self.series.get("Voice"),
-                "Place": self.series.get("Place"),
-                "Manner": self.series.get("Manner"),
-                "Sonority": self.series.get("Sonority"),
-                "EML": self.series.get("EML"),
-            }
-        )
+        self.voice = self.series.get("Voice")
+        self.place = self.series.get("Place")
+        self.manner = self.series.get("Manner")
+        self.sonority = self.series.get("Sonority")
+        self.eml = self.series.get("EML")
 
 class PhoVowel(PhoBase):
     """Generates a vowel. Sublcass of PhoBase"""
     def __init__(self, string, tier="actual", parent=None, position=None):
         super().__init__(string, tier=tier, parent=parent, position=position)
         self.subclass = "vowel"
-        self.features.update(
-            {
-                "Voice": self.series.get("Voice"),
-                "Sonority": self.series.get("Sonority"),
-                "Back": self.series.get("Back"),
-                "Central": self.series.get("Central"),
-                "Front": self.series.get("Front"),
-                "Close": self.series.get("Close"),
-                "Mid": self.series.get("Mid"),
-                "Open": self.series.get("Open"),
-                "Round": self.series.get("Round"),
-                "Rhotic": self.series.get("Rhotic"),
-            }
-        )
+        self.vowel_characteristics = None  # To be implemented from Series
 
 class PhoDiacritic(PhoElement):
     """Generates a diacritic or combining phonetic segment."""
@@ -303,11 +271,6 @@ class PhoDiacritic(PhoElement):
         self.role_switcher = False  # If followed by role switcher. To be implemented.
         self.attach_direction = None  # To be implemented
         self.base = None  # To be implemented
-        self.features.update(
-            {
-                # TODO: Implement features for diacritics
-            }
-        )
 
 class PhoLigature(PhoElement):
     """Generates a ligature segment that combines two base glyphs."""
@@ -332,8 +295,8 @@ class PhoStress(PhoElement):
     def __init__(self, string, tier="actual", parent=None, position=None):
         super().__init__(string, tier=tier, parent=parent, position=position)
         self.subclass = "stress"
-    # TODO: Implement stress on PhoSegment and future PhoSyllable.
 
+# TODO: Implement combining features for components in PhoSegment
 class PhoSegment:
     """
     Represents a segment, including base and combining elements.
@@ -343,7 +306,7 @@ class PhoSegment:
         Initializes a PhoSegment.
 
         Args:
-            components (list of PhoElement): The components of the segment generated by ipa_parser().
+            components (list of PhoElement): The components of the segment.
         """
         has_base = any(component.role == "base" for component in components)
         if not has_base:
@@ -357,13 +320,6 @@ class PhoSegment:
         self.stress = None # To be implemented
         self.syllable = None # To be implemented
         self.word = None # To be implemented
-        self.features = dict()
-        self.features.update(self.get_base(output_type=PhoBase).classify().features)
-        
-        # TODO: Implement combined features from all components
-        # for component in components:
-        #     self.features.update(component.features)
-        #     TODO Handle overwriting features if already present
         
     def __str__(self):
         return self.string
@@ -380,6 +336,8 @@ class PhoSegment:
             # f"base=[{', '.join([base.display for base in self.base])!r}], "
             # f"diacritics={d_string!r})"
         )
+    
+    
     
     def __eq__(self, other):
         if isinstance(other, PhoSegment):
@@ -408,37 +366,17 @@ class PhoSegment:
             return item in self.string
         return item in self.components
     
-    # Custom methods
-    ## TODO: def get_diacritics()
-    def get_base(self, output_type=str):
-        """
-        Returns the base elements of the PhoSegment.
-
-        Args:
-            output_type (optional): The type of output to return. Default is str.
-                                    If str, returns a string representation of the base elements.
-                                    If PhoBase, returns the base element.
-
-        Returns:
-            str or PhoBase: The base elements of the object.
-            
-        Note: compound bases not implemented for output_type=PhoBAse
-        """
-        if len(self.base) > 1:
-            if output_type == str: 
-                return "͡".join([b.string for b in self.base]) # Join compound phones with a ligature
-            if output_type == PhoBase:
-                raise ValueError(f"Segment: {self}. Handling of compound base not implemented yet. Exiting.")
-                # return self.base[0] # Not implemented
-        else:
-            if output_type == str:
-                return self.base[0].string
-            if output_type == PhoBase:
-                return self.base[0]
-    def get_feature(self, feature):
-        """Get the value of a feature."""
-        feature = feature[0].upper() + feature[1:] # capitalize first letter
-        return self.features.get(feature)
+    # def __init__(self, string, tier="actual", parent=None, position=None):
+    #     super().__init__(string, tier=tier, parent=parent, position=position)
+    #     self.subclass = "ph_segment"
+    #     self.base = None  # To be implemented
+    #     self.diacritics = None  # To be implemented
+    #     self.right_diacritics = None  # To be implemented
+    #     self.left_diacritics = None  # To be implemented
+    #     self.stress = None  # To be implemented
+    #     self.syllable = None  # To be implemented
+    #     self.word = None  # To be implemented
+    # TODO: def get_base() and get_diacritics()
 
 def ipa_parser(input_str: str) -> List[List[PhoElement]]:
     """
@@ -456,9 +394,6 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
         list: A list of ph_segment objects representing the parsed segments.
 
     """
-    if type(input_str) != str: # Workaround for NaN cells in Phon_query_to_csv.py
-        input_str = ""
-        return input_str
     
     # Remove brackets and slashes from transcription input
     input_str = re.sub(r"[\[\]\\\/]", " ", input_str)
@@ -466,7 +401,7 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
     # If input contains role switcher, return empty list
     # TODO: Add support for role switcher
     if "̵" in input_str:
-        return [""]
+        return ['']
     
     # Initialize variables
     transcript_memory: List[List[PhoElement]] = []
@@ -557,24 +492,7 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
     _logger.debug("Memory dump: %s", memory_debug)
     return transcript_memory
 
-def get_segments(input_str, output='string'):
-    ipa_parser_list = ipa_parser(input_str)
-    for seg in ipa_parser_list:
-        try:
-            if output == 'string':
-                return PhoSegment(seg)
-        except ValueError: # Skip invalid segments (e.g., boundaries)
-            # TODO: Implement handling of non-segments
-            return None
-    
 def segment_generator(input_str):
-    """
-    Generates segments based on the input string by first parsing into components with ipa_parser.
-    
-    Yields: PhoSegment object for each segment generated from the input string.
-    
-    If a ValueError is encountered (e.g., boundaries), it skips that segment.
-    """
     ipa_parser_list = ipa_parser(input_str)
     for seg in ipa_parser_list:
         try:
@@ -582,69 +500,6 @@ def segment_generator(input_str):
         except ValueError: # Skip invalid segments (e.g., boundaries)
             # TODO: Implement handling of non-segments
             pass
-
-def get_bases_string(input_str):
-    """
-    Generate a string of base phones from a transcription string. Diacritics and suprasegmentals are stripped.
-
-    Args:
-        input_str (str): The input string to parse and extract IPA bases.
-
-    Returns:
-        str: A string of the base phones extracted from the input string.
-
-    Notes:
-        - If the input string is not a string, an empty string is returned.
-        - Invalid segments (e.g., boundaries) are skipped.
-        - Multiple bases are not currently handled.
-
-    """
-    
-    if not isinstance(input_str, str):
-        input_str = ""
-        return input_str
-    bases_string = ""
-    ipa_parser_list = ipa_parser(input_str)
-    for seg in ipa_parser_list:
-        try:
-            base_string = PhoSegment(seg).base[0].string # TODO: Handle multiple bases
-            bases_string += base_string
-        except ValueError: # Skip invalid segments (e.g., boundaries)
-            # TODO: Implement handling of non-segments
-            pass
-    return bases_string
-
-
-def get_bases(input_str):
-    """
-    A function to extract bases from the input string using an IPA parser.
-
-    Args:
-        input_str (str): The input string to extract bases from.
-
-    Returns:
-        list: A list of extracted bases.
-
-    Notes:
-        - If the input string is not a string, an empty list is returned.
-        - Workaround for segments with role switcher by returning an empty list.
-        - Handles multiple bases by appending to the list.
-        - Skips invalid segments (e.g., boundaries) and non-segments.
-    """
-    if not isinstance(input_str, str):
-        return [""]
-    bases_list = []
-    ipa_parser_list = ipa_parser(input_str)
-    for seg in ipa_parser_list:
-        if not seg: # Workaround for segments with role switcher
-            return [""]
-        try:
-            base = PhoSegment(seg).base[0] # TODO: Handle multiple bases
-            bases_list.append(base)
-        except ValueError: # Skip invalid segments (e.g., boundaries)
-            # TODO: Implement handling of non-segments
-            pass
-    return bases_list
 
 if __name__ == "__main__":
     RESULT1 = PhoElement("s")
@@ -660,7 +515,4 @@ if __name__ == "__main__":
     parsed = ipa_parser(TEST5)
     segment_test = PhoSegment(parsed[0])
     seg_gen = segment_generator(TEST7)
-    segment = next(seg_gen)
-    print(segment)
-    print(segment.get_feature("Voice"))
     pass
