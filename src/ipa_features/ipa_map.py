@@ -133,6 +133,11 @@ class PhoElement:
             self.series = None
             self.symbol = self.string
             self.description = "Unknown"
+            self.display = self.string
+            self.name = "Unknown"
+            self.unicode = None
+            self.type = "Unknown"
+            self.role = "unknown"
 
 
     def __str__(self) -> str:
@@ -219,12 +224,18 @@ class PhoElement:
                     parent=self.parent,
                     position=self.position,
                 )
-            if self.type == "Vowel":
+            elif self.type == "Vowel":
                 return PhoVowel(
                     self.string,
                     tier=self.tier,
                     parent=self.parent,
                     position=self.position,
+                )
+            else:
+                # For base elements with unknown types, return generic PhoElement
+                _logger.warning("PhoElement %s has base role but unknown type %s", self.string, self.type)
+                return PhoElement(
+                    self.string, tier=self.tier, parent=self.parent, position=self.position
                 )
         elif self.role in ["diacritic_right", "diacritic_left"]:
             return PhoDiacritic(
@@ -240,6 +251,11 @@ class PhoElement:
             )
         elif self.role == "stress":
             return PhoStress(
+                self.string, tier=self.tier, parent=self.parent, position=self.position
+            )
+        elif self.role == "unknown":
+            _logger.warning("PhoElement %s not found in IPA table, treating as unknown", self.string)
+            return PhoElement(
                 self.string, tier=self.tier, parent=self.parent, position=self.position
             )
         else:
@@ -499,6 +515,7 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
             _logger.info("\tPhoElement object created for %s", char)
             # If boundary or stress marker, append directly to memory
             if ph.role in ["boundary", "stress"]:
+
                 if not has_base:
                     transcript_memory.append([ph])  # Store as own segment directly.
                     _logger.info("\tBoundary/stress stored to memory")
