@@ -271,3 +271,4 @@ End high tone,MODIFIER LETTER END HIGH TONE,˺,◌˺,0x02fa,Tone,diacritic_right
 Modifier letter small X,superscript X,ˣ,◌ˣ,0x02e3,Diacritic,diacritic_right,,,,,,,,,,,,,,,,,
 Modifier letter small G,superscript G,ᵍ,◌ᵍ,0x1d4d,Diacritic,diacritic_right,,,,,,,,,,,,,,,,,
 Backed,Modifier letter right arrowhead,˃,◌˃,0x02c3,Diacritic,diacritic_right,,,,,,,,,,,,,,,,,
+Unintelligible cover symbol,unintelligible cover symbol,*,*,,Null,base,,,,,,,,,,,,,,,,,
