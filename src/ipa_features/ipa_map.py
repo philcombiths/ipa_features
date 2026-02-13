@@ -563,25 +563,27 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
     _logger.debug("Memory dump: %s", memory_debug)
     return transcript_memory
 
-def get_segments(input_str, output='string'):
-    """
-    Return all parsed segments as a list of PhoSegment objects.
+def get_segment(input_str, output='string'):
+    """Return the first valid parsed segment from ``input_str``.
+
+    Invalid/non-segment parses (for example, boundaries) are skipped.
 
     Args:
         input_str (str): IPA transcription input.
-        output (str): Deprecated argument retained for compatibility.
+        output (str): Output format. Only ``'string'`` is currently supported.
 
     Returns:
-        list[PhoSegment]: Parsed segments, excluding non-segment elements.
+        PhoSegment | None: The first valid segment, or ``None`` if none exists.
     """
-    segments = []
+    if output != 'string':
+        raise ValueError(f"Unsupported output type: {output}")
+
     for seg in ipa_parser(input_str):
         try:
-            segments.append(PhoSegment(seg))
-        except ValueError: # Skip invalid segments (e.g., boundaries)
-            # TODO: Implement handling of non-segments
+            return PhoSegment(seg)
+        except ValueError:  # Skip invalid segments (e.g., boundaries)
             continue
-    return segments
+    return None
     
 def segment_generator(input_str):
     """
