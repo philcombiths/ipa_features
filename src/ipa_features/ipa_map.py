@@ -26,10 +26,8 @@ from typing import List
 
 import pandas as pd
 
-from ipa_features.logging_config import setup_logging
-
 _logger = logging.getLogger(__name__)
-setup_logging(logging.DEBUG)
+_logger.addHandler(logging.NullHandler())
 
 pkg_dir = os.path.dirname(__file__)
 data_src = os.path.join(pkg_dir, "IPA_Symbol_Table.csv")
@@ -96,10 +94,17 @@ class PhoElement:
         self.position = position
         self.features = dict()
         self.subclass = None
+        self.series = None
+        self.string = ""
+        self.symbol = ""
+        self.display = ""
+        self.description = "Unknown"
+        self.name = "Unknown"
+        self.unicode = None
+        self.type = "Unknown"
+        self.role = "unknown"
         
         if not isinstance(string, str): # Workaround for NaN to use with phon_query_to_csv.py
-            self.string = ""
-            self.symbol = ""
             return
             
         if string.isspace(): # Handle whitespace string as word boundary
@@ -129,15 +134,9 @@ class PhoElement:
             self.type = self.series.get("Type")
             self.role = self.series.get("Role")
         except KeyError:
-            print(f"Warning: {self.string} not found in IPA_Symbol_Table.csv")
-            self.series = None
+            _logger.warning("%s not found in IPA_Symbol_Table.csv", self.string)
             self.symbol = self.string
-            self.description = "Unknown"
             self.display = self.string
-            self.name = "Unknown"
-            self.unicode = None
-            self.type = "Unknown"
-            self.role = "unknown"
 
 
     def __str__(self) -> str:
@@ -174,18 +173,7 @@ class PhoElement:
 
     def __ne__(self, other):
         if isinstance(other, PhoElement):
-            return all(
-                (
-                    self.string != other.string,
-                    self.symbol != other.symbol,
-                    self.type != other.type,
-                    self.role != other.role,
-                    # add if equality to be specific to instance
-                    # self.tier != other.tier,
-                    # self.parent != other.parent,
-                    # self.position != other.position
-                )
-            )
+            return not self.__eq__(other)
         return NotImplemented
 
     def __getitem__(
@@ -265,8 +253,10 @@ class PhoElement:
             )
     def get_feature(self, feature):
         """Get the value of a feature."""
+        if not feature:
+            return None
         feature = feature[0].upper() + feature[1:] # capitalize first letter
-        self.features.get(feature)
+        return self.features.get(feature)
         
 
 class PhoBase(PhoElement):
@@ -472,9 +462,8 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
         list: A list of ph_segment objects representing the parsed segments.
 
     """
-    if type(input_str) != str: # Workaround for NaN cells in Phon_query_to_csv.py
-        input_str = ""
-        return input_str
+    if not isinstance(input_str, str): # Workaround for NaN cells in Phon_query_to_csv.py
+        return []
     
     # Remove brackets and slashes from transcription input
     input_str = re.sub(r"[\[\]\\\/]", " ", input_str)
@@ -575,14 +564,24 @@ def ipa_parser(input_str: str) -> List[List[PhoElement]]:
     return transcript_memory
 
 def get_segments(input_str, output='string'):
-    ipa_parser_list = ipa_parser(input_str)
-    for seg in ipa_parser_list:
+    """
+    Return all parsed segments as a list of PhoSegment objects.
+
+    Args:
+        input_str (str): IPA transcription input.
+        output (str): Deprecated argument retained for compatibility.
+
+    Returns:
+        list[PhoSegment]: Parsed segments, excluding non-segment elements.
+    """
+    segments = []
+    for seg in ipa_parser(input_str):
         try:
-            if output == 'string':
-                return PhoSegment(seg)
+            segments.append(PhoSegment(seg))
         except ValueError: # Skip invalid segments (e.g., boundaries)
             # TODO: Implement handling of non-segments
-            return None
+            continue
+    return segments
     
 def segment_generator(input_str):
     """
